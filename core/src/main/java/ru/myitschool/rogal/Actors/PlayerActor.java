@@ -1,0 +1,1066 @@
+package ru.myitschool.rogal.Actors;
+
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.Gdx;
+
+import ru.myitschool.rogal.Abilities.Abilitis.FrostAuraAbility;
+import ru.myitschool.rogal.Abilities.Ability;
+import ru.myitschool.rogal.Abilities.AbilityManager;
+import ru.myitschool.rogal.Abilities.Abilitis.HealingAuraAbility;
+import ru.myitschool.rogal.Abilities.Abilitis.EnergyBullet;
+import ru.myitschool.rogal.Abilities.Abilitis.LightningChainAbility;
+import ru.myitschool.rogal.Abilities.Abilitis.OrbitingBladeAbility;
+import ru.myitschool.rogal.CustomHelpers.Helpers.HitboxHelper;
+import ru.myitschool.rogal.CustomHelpers.Vectors.Vector2Helpers;
+import ru.myitschool.rogal.CustomHelpers.utils.GameUI;
+import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
+
+public class PlayerActor extends Actor {
+    TextureRegion texture;
+    Polygon hitbox;
+    public static final float SCALE = 0.1f;
+
+    // Атрибуты персонажа
+    private int maxHealth = 120;
+    private int currentHealth = maxHealth;
+    private float healthRegeneration = 0.5f;
+    private float healthRegenCounter = 0f;
+    private float healthRegenAccumulator = 0f; // Аккумулятор для накопления дробных значений регенерации
+    private float cooldownMultiplier = 1.0f;
+    private int level = 1;
+    private int experience = 0;
+    private int experienceToNextLevel = 100;
+
+    // Максимальный уровень персонажа
+    private static final int MAX_LEVEL = 30;
+
+    // Максимальный уровень способности
+    private static final int MAX_ABILITY_LEVEL = 5;
+
+    private static float SPEED = 2.2f;
+    private Touchpad touchpad;
+    private GameUI gameUI;
+
+    // Управление способностями
+    private AbilityManager abilityManager;
+    private Random random = new Random();
+
+    // Время неуязвимости после получения урона
+    private float invulnerabilityTime = 0f;
+    private static final float MAX_INVULNERABILITY_TIME = 0.6f;
+
+    // Константы для прокачки персонажа
+    private static final float HEALTH_PER_LEVEL = 20f;
+    private static final float REGEN_PER_LEVEL = 0.15f;
+    private static final float ENERGY_PER_LEVEL = 10f;
+    private static final float ENERGY_REGEN_PER_LEVEL = 0.15f;
+    private static final float SPEED_PER_LEVEL = 0.04f;
+    private static final float COOLDOWN_REDUCTION_PER_LEVEL = 0.015f;
+    private static final float EXP_SCALING = 1.2f;
+
+
+    private interface AbilityConstructor {
+        Ability create();
+    }
+
+    private final ArrayList<AbilityConstructor> availableAbilities = new ArrayList<>();
+
+    // Добавляем атрибуты для энергии
+    private int maxEnergy = 100;
+    private int currentEnergy = maxEnergy;
+    private float energyRegeneration = 1.5f;
+    private float energyRegenCounter = 0f;
+    private float energyRegenAccumulator = 0f;
+
+    // Улучшение для системы неуязвимости - батарея энергии для резкого повышения регенерации
+    private boolean energyBatteryActive = false;
+    private float energyBatteryTime = 0f;
+    private static final float ENERGY_BATTERY_DURATION = 5.0f;
+    private static final float ENERGY_BATTERY_BOOST = 2.0f;
+
+    // Система дебаффов
+    private HashMap<String, PlayerDebuff> activeDebuffs = new HashMap<>();
+
+    /**
+     * Класс для хранения информации о дебаффе игрока
+     */
+    public class PlayerDebuff {
+        private String id;
+        private String name;
+        private float duration;
+        private float remainingTime;
+        private int effectValue;
+        private DebuffType type;
+
+        public PlayerDebuff(String id, String name, float duration, int effectValue, DebuffType type) {
+            this.id = id;
+            this.name = name;
+            this.duration = duration;
+            this.remainingTime = duration;
+            this.effectValue = effectValue;
+            this.type = type;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public float getDuration() {
+            return duration;
+        }
+
+        public float getRemainingTime() {
+            return remainingTime;
+        }
+
+        public void setRemainingTime(float time) {
+            this.remainingTime = Math.max(0, time);
+        }
+
+        public int getEffectValue() {
+            return effectValue;
+        }
+
+        public DebuffType getType() {
+            return type;
+        }
+
+        /**
+         * Обновляет дебафф
+         * @param delta время между кадрами
+         * @return true если дебафф все еще активен
+         */
+        public boolean update(float delta) {
+            remainingTime -= delta;
+            return remainingTime > 0;
+        }
+    }
+
+    /**
+     * Типы дебаффов
+     */
+    public enum DebuffType {
+        SLOW,           // Замедление
+        DAMAGE_OVER_TIME, // Урон со временем
+        ARMOR_REDUCTION,  // Снижение защиты
+        ATTACK_REDUCTION, // Снижение атаки
+        STUN,             // Оглушение
+        CONFUSION         // Спутанность (обратное управление)
+    }
+
+    public PlayerActor(final String texturePath, final Touchpad touchpad) {
+        Texture tex = new Texture(texturePath);
+        this.texture = new TextureRegion(tex);
+        this.touchpad = touchpad;
+
+        setWidth(this.texture.getTexture().getWidth()*SCALE);
+        setHeight(this.texture.getTexture().getHeight()*SCALE);
+        setOriginX(getWidth()/2);
+        setOriginY(getHeight()/2);
+
+        hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 12);
+        hitbox.setOrigin(getOriginX(), getOriginY());
+
+        abilityManager = new AbilityManager(this);
+        initAvailableAbilities();
+
+        unlockInitialAbility();
+
+        if (abilityManager != null) {
+            abilityManager.enableAutoUseForAll();
+        }
+    }
+
+    /**
+     * Инициализирует список доступных конструкторов способностей
+     */
+    private void initAvailableAbilities() {
+        availableAbilities.add(EnergyBullet::new);
+        availableAbilities.add(HealingAuraAbility::new);
+        availableAbilities.add(OrbitingBladeAbility::new);
+        availableAbilities.add(LightningChainAbility::new);
+        availableAbilities.add(FrostAuraAbility::new);
+    }
+
+    /**
+     * Разблокирует начальную способность игрока
+     */
+    private void unlockInitialAbility() {
+        if (abilityManager == null) {
+            LogHelper.error("PlayerActor", "Cannot unlock initial ability: AbilityManager is null");
+            return;
+        }
+
+        // Проверяем, есть ли уже способности
+        if (abilityManager.getAbilities().size > 0) {
+            LogHelper.log("PlayerActor", "Initial abilities already unlocked");
+            return;
+        }
+
+        // Генерируем список всех начальных способностей
+        ArrayList<Ability> allInitialAbilities = new ArrayList<>();
+        for (AbilityConstructor constructor : availableAbilities) {
+            allInitialAbilities.add(constructor.create());
+        }
+
+        // Выбираем только 3 случайные способности для предложения игроку
+        ArrayList<Ability> choiceAbilities = new ArrayList<>();
+        Collections.shuffle(allInitialAbilities, random);
+        for (int i = 0; i < 3; i++) {
+            choiceAbilities.add(allInitialAbilities.get(i));
+        }
+
+        // Предлагаем выбор через UI
+        if (gameUI != null && !choiceAbilities.isEmpty()) {
+            gameUI.showAbilityChoiceDialog(choiceAbilities, ability -> {
+                abilityManager.addAbility(ability);
+                if (gameUI != null) {
+                    gameUI.showAbilityUnlockMessage(ability.getName());
+                    LogHelper.log("PlayerActor", "Выбрана начальная способность: " + ability.getName());
+                    // Обновляем UI после добавления способности
+                    gameUI.updateAbilities();
+                }
+            });
+        } else {
+            LogHelper.error("PlayerActor", "Cannot show ability choice: GameUI is null or no abilities available");
+        }
+        updateUIData();
+    }
+
+    public void setGameUI(GameUI gameUI) {
+        this.gameUI = gameUI;
+        if (gameUI != null) {
+            gameUI.setPlayer(this);
+            LogHelper.log("PlayerActor", "Connected to GameUI");
+
+            // Проверяем, нужно ли показать выбор начальной способности
+            if (abilityManager != null && abilityManager.getAbilities().size == 0) {
+                unlockInitialAbility();
+            }
+        }
+    }
+
+    @Override
+    public void draw(final Batch batch, final float parentAlpha) {
+        //texture = anim.getKeyFrame(stateTime);
+        batch.draw(
+            texture,
+            getX(),
+            getY(),
+            getOriginX(),
+            getOriginY(),
+            getWidth(),
+            getHeight(),
+            1,
+            1,
+            getRotation()-90
+        );
+    }
+
+    @Override
+    public void act(final float delta) {
+        super.act(delta);
+
+        // Обработка перемещения
+        float nextX = touchpad.getKnobPercentX() * SPEED;
+        float nextY = touchpad.getKnobPercentY() * SPEED;
+        moveBy(nextX, nextY);
+
+        float angle = Vector2Helpers.getRotationByVector(nextX, nextY);
+        if(angle != 0){
+            setRotation(angle);
+        }
+
+        // Обновляем положение и поворот хитбокса
+        hitbox.setPosition(getX(), getY());
+        hitbox.setRotation(getRotation() + 90);
+
+        // Регенерация здоровья
+        healthRegenCounter += delta;
+        if (healthRegenCounter >= 1f) {
+            regenerateHealth();
+            healthRegenCounter = 0f;
+        }
+
+        // Регенерация энергии
+        energyRegenCounter += delta;
+        if (energyRegenCounter >= 1f) {
+            regenerateEnergy();
+            energyRegenCounter = 0f;
+        }
+
+        // Обновление таймера неуязвимости
+        if (invulnerabilityTime > 0) {
+            invulnerabilityTime -= delta;
+        }
+        
+        // Обновление таймера энергетической батареи
+        if (energyBatteryActive) {
+            energyBatteryTime -= delta;
+            if (energyBatteryTime <= 0) {
+                energyBatteryActive = false;
+                LogHelper.log("PlayerActor", "Energy battery effect ended");
+            }
+        }
+
+        // Обновление дебаффов
+        updateDebuffs(delta);
+
+        checkOverlap();
+
+        // Обновление состояния способностей
+        if (abilityManager != null) {
+            abilityManager.update(delta);
+        }
+
+        gameUI.act(delta);
+    }
+
+    /**
+     * Регенерирует здоровье персонажа
+     */
+    private void regenerateHealth() {
+        if (currentHealth < maxHealth) {
+            healthRegenAccumulator += healthRegeneration;
+
+            if (healthRegenAccumulator >= 1) {
+                int regenAmount = (int)healthRegenAccumulator;
+                healthRegenAccumulator -= regenAmount;
+
+                currentHealth = Math.min(currentHealth + regenAmount, maxHealth);
+                updateUIData();
+            }
+        }
+    }
+
+    /**
+     * Обновляет данные в пользовательском интерфейсе
+     */
+    private void updateUIData() {
+        if (gameUI != null) {
+            gameUI.updateHealth(currentHealth, maxHealth, healthRegeneration);
+            gameUI.updateLevel(level);
+            gameUI.updateExperience(experience, experienceToNextLevel);
+            gameUI.updateEnergy(currentEnergy, maxEnergy, energyRegeneration);
+        }
+    }
+
+    /**
+     * Наносит урон персонажу
+     * @param damage величина урона
+     * @return true если урон был нанесен, false если персонаж неуязвим
+     */
+    public boolean takeDamage(int damage) {
+        if (invulnerabilityTime > 0) {
+            return false;
+        }
+
+        currentHealth = Math.max(0, currentHealth - damage);
+        updateUIData();
+
+        invulnerabilityTime = MAX_INVULNERABILITY_TIME;
+
+        if (currentHealth <= 0) {
+            onDeath();
+        }
+
+        return true;
+    }
+
+    /**
+     * Добавляет опыт персонажу
+     * @param exp количество опыта
+     */
+    public void addExperience(int exp) {
+        // Если достигнут максимальный уровень, опыт не добавляется
+        if (level >= MAX_LEVEL) return;
+
+        experience += exp;
+        updateUIData();
+
+        // Проверяем, достаточно ли опыта для нового уровня
+        while (experience >= experienceToNextLevel && level < MAX_LEVEL) {
+            experience -= experienceToNextLevel;
+            levelUp();
+        }
+
+        // Если достигнут максимальный уровень, устанавливаем опыт в максимум
+        if (level >= MAX_LEVEL) {
+            experience = experienceToNextLevel;
+        }
+    }
+
+    /**
+     * Повышает уровень персонажа
+     */
+    private void levelUp() {
+        level++;
+
+        // Улучшаем характеристики персонажа
+        int oldMaxHealth = maxHealth;
+        maxHealth += HEALTH_PER_LEVEL;
+        currentHealth += (maxHealth - oldMaxHealth);
+
+        healthRegeneration += REGEN_PER_LEVEL;
+        energyRegeneration += ENERGY_REGEN_PER_LEVEL;
+        maxEnergy += ENERGY_PER_LEVEL;
+        SPEED += SPEED_PER_LEVEL;
+        cooldownMultiplier -= COOLDOWN_REDUCTION_PER_LEVEL;
+        
+        // Активируем энергетическую батарею при повышении уровня
+        activateEnergyBattery();
+
+        // Восстанавливаем полную энергию при повышении уровня
+        restoreFullEnergy();
+
+        // Рассчитываем новое требование опыта если уровень не максимальный
+        if (level < MAX_LEVEL) {
+            experienceToNextLevel = Math.round(experienceToNextLevel * EXP_SCALING);
+        }
+
+        if (gameUI != null) {
+            gameUI.showLevelUpMessage(level);
+            offerAbilityChoice();
+        }
+    }
+
+    /**
+     * Предлагает выбор из 3 случайных способностей после повышения уровня
+     */
+    private void offerAbilityChoice() {
+        ArrayList<Ability> choices = generateRandomAbilityChoices(3);
+
+        if (gameUI != null && !choices.isEmpty()) {
+            gameUI.showAbilityChoiceDialog(choices, ability -> {
+                int abilityIndex = findAbilityIndex(ability);
+
+                if (abilityIndex >= 0) {
+                    int newLevel = upgradeAbility(abilityIndex);
+                    Gdx.app.log("PlayerActor", "Улучшена способность: " + ability.getName() + " до уровня " + newLevel);
+                } else {
+                    abilityManager.addAbility(ability);
+                    Gdx.app.log("PlayerActor", "Получена новая способность: " + ability.getName());
+                }
+            });
+        }
+    }
+
+    /**
+     * Находит индекс способности в списке игрока
+     * @param ability способность для поиска
+     * @return индекс способности или -1, если не найдена
+     */
+    private int findAbilityIndex(Ability ability) {
+        Array<Ability> playerAbilities = abilityManager.getAbilities();
+        for (int i = 0; i < playerAbilities.size; i++) {
+            // Сравниваем по имени класса, т.к. это разные экземпляры
+            if (playerAbilities.get(i).getClass().getName().equals(ability.getClass().getName())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Генерирует список случайных способностей для выбора
+     * @param count количество способностей для генерации
+     * @return список случайных способностей (новых и существующих для улучшения)
+     */
+    private ArrayList<Ability> generateRandomAbilityChoices(int count) {
+        ArrayList<Ability> result = new ArrayList<>();
+
+        ArrayList<Ability> upgradableAbilities = getUpgradableAbilities();
+
+        ArrayList<Ability> newAbilities = generateNewAbilities();
+
+        ArrayList<Ability> allPossibleChoices = new ArrayList<>();
+        allPossibleChoices.addAll(upgradableAbilities);
+        allPossibleChoices.addAll(newAbilities);
+
+        if (allPossibleChoices.size() <= count) {
+            return allPossibleChoices;
+        }
+
+        Collections.shuffle(allPossibleChoices, random);
+        for (int i = 0; i < count; i++) {
+            if (i < allPossibleChoices.size()) {
+                result.add(allPossibleChoices.get(i));
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Возвращает список способностей игрока, которые можно улучшить
+     * @return список способностей, не достигших максимального уровня
+     */
+    private ArrayList<Ability> getUpgradableAbilities() {
+        ArrayList<Ability> upgradable = new ArrayList<>();
+
+        Array<Ability> playerAbilities = abilityManager.getAbilities();
+        for (Ability ability : playerAbilities) {
+            if (ability.getLevel() < MAX_ABILITY_LEVEL) {
+                try {
+                    Ability abilityCopy = ability.getClass().getDeclaredConstructor().newInstance();
+                    upgradable.add(abilityCopy);
+                } catch (Exception e) {
+                    Gdx.app.error("PlayerActor", "Ошибка при создании копии способности", e);
+                }
+            }
+        }
+
+        return upgradable;
+    }
+
+    /**
+     * Генерирует список новых способностей, которых еще нет у игрока
+     * @return список новых способностей
+     */
+    private ArrayList<Ability> generateNewAbilities() {
+        ArrayList<Ability> newAbilities = new ArrayList<>();
+
+        // Получаем текущие способности игрока
+        Array<Ability> playerAbilities = abilityManager.getAbilities();
+
+        // Проверяем каждый доступный конструктор способности
+        for (AbilityConstructor constructor : availableAbilities) {
+            // Создаем тестовый экземпляр для проверки
+            Ability testAbility = constructor.create();
+            boolean playerHasAbility = false;
+
+            // Проверяем, есть ли такая способность у игрока
+            for (Ability playerAbility : playerAbilities) {
+                if (playerAbility.getClass().getName().equals(testAbility.getClass().getName())) {
+                    playerHasAbility = true;
+                    break;
+                }
+            }
+
+            // Если у игрока нет такой способности, добавляем её в список новых
+            if (!playerHasAbility) {
+                newAbilities.add(testAbility);
+            }
+        }
+
+        return newAbilities;
+    }
+
+    /**
+     * Действия при смерти персонажа
+     */
+    private void onDeath() {
+        System.out.println("Player died!");
+    }
+
+    private void checkOverlap(){
+        Stage stage = getStage();
+        if (stage == null) return;
+
+        // Получаем всех акторов на сцене
+        Array<Actor> actors = stage.getActors();
+        Array<EnemyActor> enemiesToRemove = new Array<>();
+
+        // Проверяем столкновения с врагами
+        for (int i = 0; i < actors.size; i++) {
+            Actor actor = actors.get(i);
+            if (actor instanceof EnemyActor){
+                EnemyActor enemy = (EnemyActor) actor;
+
+                // Проверяем пересечение полигонов
+                boolean isOverlap = Intersector.overlapConvexPolygons(this.hitbox, enemy.getHitbox());
+
+                if (isOverlap) {
+                    // При столкновении наносим урон игроку
+                    takeDamage(enemy.getCollisionDamage());
+                    enemiesToRemove.add(enemy);
+
+                    // Для отладки выводим информацию в консоль
+                    Gdx.app.debug("PlayerActor", "Collision detected with enemy");
+                }
+            }
+        }
+
+        // Удаляем врагов, с которыми произошло столкновение
+        for (EnemyActor enemy : enemiesToRemove) {
+            enemy.die();
+        }
+    }
+
+    public Polygon getHitbox() {
+        return this.hitbox;
+    }
+
+    public int getCurrentHealth() {
+        return currentHealth;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public float getHealthRegeneration() {
+        return healthRegeneration;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    /**
+     * Возвращает максимальный уровень персонажа
+     * @return максимальный уровень
+     */
+    public int getMaxLevel() {
+        return MAX_LEVEL;
+    }
+
+    /**
+     * Возвращает максимальный уровень способности
+     * @return максимальный уровень способности
+     */
+    public int getMaxAbilityLevel() {
+        return MAX_ABILITY_LEVEL;
+    }
+
+    public float getCooldownMultiplier() {
+        return cooldownMultiplier;
+    }
+
+    public void setCurrentHealth(int health) {
+        this.currentHealth = Math.min(health, maxHealth);
+        updateUIData();
+    }
+
+    public void setMaxHealth(int maxHealth) {
+        this.maxHealth = maxHealth;
+        this.currentHealth = Math.min(currentHealth, maxHealth);
+        updateUIData();
+    }
+
+    public void setHealthRegeneration(float regen) {
+        this.healthRegeneration = regen;
+        updateUIData();
+    }
+
+    public void setLevel(int level) {
+        this.level = Math.max(1, Math.min(level, MAX_LEVEL));
+        updateUIData();
+    }
+
+    /**
+     * Возвращает текущее количество опыта
+     * @return текущий опыт
+     */
+    public int getExperience() {
+        return experience;
+    }
+
+    /**
+     * Возвращает количество опыта, необходимое для следующего уровня
+     * @return опыт до следующего уровня
+     */
+    public int getExperienceToNextLevel() {
+        return experienceToNextLevel;
+    }
+
+    /**
+     * Возвращает менеджер способностей
+     * @return менеджер способностей игрока
+     */
+    public AbilityManager getAbilityManager() {
+        return abilityManager;
+    }
+
+    /**
+     * Использует способность по индексу
+     * @param abilityIndex индекс способности (0-4)
+     * @param targetPosition позиция использования
+     * @return true если способность использована успешно
+     */
+    public boolean useAbility(int abilityIndex, Vector2 targetPosition) {
+        if (abilityManager == null) {
+            LogHelper.error("PlayerActor", "Cannot use ability: AbilityManager is null");
+            return false;
+        }
+
+        boolean success = abilityManager.activateAbility(abilityIndex, targetPosition);
+
+        if (success) {
+            // Получаем название способности для логов
+            Ability ability = abilityManager.getAbility(abilityIndex);
+            if (ability != null) {
+                LogHelper.log("PlayerActor", "Used ability " + abilityIndex + ": " + ability.getName());
+            }
+        }
+
+        return success;
+    }
+
+    /**
+     * Повышает уровень способности
+     * @param index индекс способности в списке
+     * @return новый уровень способности или -1 в случае ошибки
+     */
+    public int upgradeAbility(int index) {
+        if (abilityManager == null) return -1;
+        return abilityManager.levelUpAbility(index);
+    }
+
+    /**
+     * Получение текущего значения энергии
+     * @return текущее количество энергии
+     */
+    public int getCurrentEnergy() {
+        return currentEnergy;
+    }
+
+    /**
+     * Получение максимального значения энергии
+     * @return максимальное количество энергии
+     */
+    public int getMaxEnergy() {
+        return maxEnergy;
+    }
+
+    /**
+     * Получение значения регенерации энергии
+     * @return значение регенерации энергии в секунду
+     */
+    public float getEnergyRegeneration() {
+        return energyRegeneration;
+    }
+
+    /**
+     * Устанавливает текущее значение энергии
+     * @param energy новое значение энергии
+     */
+    public void setCurrentEnergy(int energy) {
+        this.currentEnergy = Math.min(energy, maxEnergy);
+        updateUIData();
+    }
+
+    /**
+     * Устанавливает максимальное значение энергии
+     * @param maxEnergy новое максимальное значение энергии
+     */
+    public void setMaxEnergy(int maxEnergy) {
+        this.maxEnergy = maxEnergy;
+        this.currentEnergy = Math.min(currentEnergy, maxEnergy);
+        updateUIData();
+    }
+
+    /**
+     * Устанавливает значение регенерации энергии
+     * @param regen новое значение регенерации энергии
+     */
+    public void setEnergyRegeneration(float regen) {
+        this.energyRegeneration = regen;
+        updateUIData();
+    }
+
+    /**
+     * Восстанавливает энергию игрока
+     */
+    private void regenerateEnergy() {
+        if (currentEnergy < maxEnergy) {
+            // Применяем бонус от батареи энергии, если активна
+            float actualRegen = energyRegeneration;
+            
+            if (energyBatteryActive) {
+                actualRegen *= ENERGY_BATTERY_BOOST;
+            }
+            
+            energyRegenAccumulator += actualRegen;
+            
+            if (energyRegenAccumulator >= 1) {
+                int regenAmount = (int)energyRegenAccumulator;
+                energyRegenAccumulator -= regenAmount;
+                
+                currentEnergy = Math.min(currentEnergy + regenAmount, maxEnergy);
+                updateUIData();
+            }
+        }
+    }
+
+    /**
+     * Использует энергию для способности
+     * @param cost стоимость энергии
+     * @return true если успешно потрачена энергия
+     */
+    public boolean useEnergy(float cost) {
+        int energyCost = Math.round(cost);
+        if (currentEnergy >= energyCost) {
+            currentEnergy -= energyCost;
+            updateUIData();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Находит позицию ближайшего врага в пределах заданного радиуса
+     * @param searchRadius радиус поиска врагов
+     * @return позиция ближайшего врага или null, если враги не найдены
+     */
+    public Vector2 findNearestEnemyPosition(float searchRadius) {
+        Stage stage = getStage();
+        if (stage == null) return null;
+
+        Vector2 playerPos = new Vector2(getX() + getOriginX(), getY() + getOriginY());
+        Vector2 nearestEnemyPos = null;
+        float minDistance = Float.MAX_VALUE;
+
+        // Получаем всех акторов на сцене
+        Array<Actor> actors = stage.getActors();
+
+        // Ищем ближайшего врага
+        for (int i = 0; i < actors.size; i++) {
+            Actor actor = actors.get(i);
+            if (actor instanceof EnemyActor) {
+                EnemyActor enemy = (EnemyActor) actor;
+
+                // Рассчитываем позицию врага
+                Vector2 enemyPos = new Vector2(enemy.getX() + enemy.getOriginX(),
+                                             enemy.getY() + enemy.getOriginY());
+
+                // Вычисляем расстояние до врага
+                float distance = playerPos.dst(enemyPos);
+
+                // Если враг в пределах радиуса и ближе предыдущих найденных
+                if (distance <= searchRadius && distance < minDistance) {
+                    minDistance = distance;
+                    nearestEnemyPos = enemyPos;
+                }
+            }
+        }
+
+        return nearestEnemyPos;
+    }
+
+    /**
+     * Получает текущую скорость игрока
+     * @return текущая скорость
+     */
+    public float getSpeed() {
+        return SPEED;
+    }
+
+    /**
+     * Устанавливает скорость игрока
+     * @param speed новая скорость
+     */
+    public void setSpeed(float speed) {
+        SPEED = speed;
+    }
+
+    /**
+     * Добавляет дебафф игроку
+     * @param id уникальный идентификатор дебаффа
+     * @param name название дебаффа
+     * @param duration длительность дебаффа в секундах
+     * @param effectValue значение эффекта дебаффа
+     * @param type тип дебаффа
+     * @return true если дебафф успешно добавлен
+     */
+    public boolean addDebuff(String id, String name, float duration, int effectValue, DebuffType type) {
+        // Если такой дебафф уже есть, обновляем его длительность
+        if (activeDebuffs.containsKey(id)) {
+            PlayerDebuff existingDebuff = activeDebuffs.get(id);
+            float newDuration = Math.max(existingDebuff.getRemainingTime(), duration);
+            existingDebuff.setRemainingTime(newDuration);
+            LogHelper.log("PlayerActor", "Updated debuff " + name + " duration to " + newDuration);
+            return true;
+        }
+
+        // Создаем новый дебафф
+        PlayerDebuff debuff = new PlayerDebuff(id, name, duration, effectValue, type);
+        activeDebuffs.put(id, debuff);
+        LogHelper.log("PlayerActor", "Added debuff " + name + " with duration " + duration);
+
+        // Применяем немедленный эффект дебаффа
+        applyDebuffEffect(debuff, true);
+
+        return true;
+    }
+
+    /**
+     * Удаляет дебафф у игрока
+     * @param id идентификатор дебаффа
+     * @return true если дебафф был удален
+     */
+    public boolean removeDebuff(String id) {
+        if (activeDebuffs.containsKey(id)) {
+            PlayerDebuff debuff = activeDebuffs.remove(id);
+            LogHelper.log("PlayerActor", "Removed debuff " + debuff.getName());
+
+            // Отменяем эффект дебаффа
+            applyDebuffEffect(debuff, false);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Уменьшает длительность указанного дебаффа
+     * @param id идентификатор дебаффа
+     * @param reduction количество секунд для уменьшения
+     * @return true если дебафф был изменен
+     */
+    public boolean reduceDebuffDuration(String id, float reduction) {
+        if (activeDebuffs.containsKey(id)) {
+            PlayerDebuff debuff = activeDebuffs.get(id);
+            float currentTime = debuff.getRemainingTime();
+            float newTime = Math.max(0, currentTime - reduction);
+
+            debuff.setRemainingTime(newTime);
+            LogHelper.log("PlayerActor", "Reduced debuff " + debuff.getName() + " duration: " +
+                        currentTime + " -> " + newTime);
+
+            if (newTime <= 0) {
+                removeDebuff(id);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Очищает все дебаффы игрока
+     * @return количество удаленных дебаффов
+     */
+    public int clearAllDebuffs() {
+        int count = activeDebuffs.size();
+        if (count > 0) {
+            for (PlayerDebuff debuff : activeDebuffs.values()) {
+                applyDebuffEffect(debuff, false);
+            }
+            activeDebuffs.clear();
+            LogHelper.log("PlayerActor", "Cleared all debuffs (" + count + ")");
+        }
+        return count;
+    }
+
+    /**
+     * Возвращает все активные дебаффы игрока
+     * @return карта дебаффов с их оставшейся длительностью
+     */
+    public HashMap<String, Float> getActiveDebuffs() {
+        HashMap<String, Float> result = new HashMap<>();
+        for (Map.Entry<String, PlayerDebuff> entry : activeDebuffs.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().getRemainingTime());
+        }
+        return result;
+    }
+
+    /**
+     * Обновляет все активные дебаффы
+     * @param delta время между кадрами
+     */
+    private void updateDebuffs(float delta) {
+        ArrayList<String> expiredDebuffs = new ArrayList<>();
+
+        for (Map.Entry<String, PlayerDebuff> entry : activeDebuffs.entrySet()) {
+            PlayerDebuff debuff = entry.getValue();
+            if (!debuff.update(delta)) {
+                // Дебафф истек
+                expiredDebuffs.add(entry.getKey());
+            } else {
+                // Применяем периодический эффект дебаффа
+                applyPeriodicDebuffEffect(debuff, delta);
+            }
+        }
+
+        // Удаляем истекшие дебаффы
+        for (String id : expiredDebuffs) {
+            removeDebuff(id);
+        }
+    }
+
+    /**
+     * Применяет эффект дебаффа
+     * @param debuff объект дебаффа
+     * @param isApplying true если применяем, false если отменяем
+     */
+    private void applyDebuffEffect(PlayerDebuff debuff, boolean isApplying) {
+        switch (debuff.getType()) {
+            case SLOW:
+                // Изменяем скорость
+                float speedModifier = isApplying ?
+                    (1.0f - debuff.getEffectValue() / 100.0f) :
+                    (1.0f / (1.0f - debuff.getEffectValue() / 100.0f));
+                SPEED *= speedModifier;
+                break;
+            case ARMOR_REDUCTION:
+                // Можно реализовать в будущем
+                break;
+            case ATTACK_REDUCTION:
+                // Можно реализовать в будущем
+                break;
+            case STUN:
+                // Можно реализовать в будущем
+                break;
+            default:
+                // Для других типов дебаффов
+                break;
+        }
+    }
+
+    /**
+     * Применяет периодический эффект дебаффа
+     * @param debuff объект дебаффа
+     * @param delta время между кадрами
+     */
+    private void applyPeriodicDebuffEffect(PlayerDebuff debuff, float delta) {
+        switch (debuff.getType()) {
+            case DAMAGE_OVER_TIME:
+                // Наносим урон со временем
+                float damagePerSecond = debuff.getEffectValue();
+                int damage = Math.round(damagePerSecond * delta);
+                if (damage > 0) {
+                    takeDamage(damage);
+                }
+                break;
+            default:
+                // Другие периодические эффекты
+                break;
+        }
+    }
+
+    /**
+     * Полностью восстанавливает энергию игрока
+     */
+    public void restoreFullEnergy() {
+        currentEnergy = maxEnergy;
+        updateUIData();
+        LogHelper.log("PlayerActor", "Energy fully restored: " + currentEnergy + "/" + maxEnergy);
+    }
+
+    /**
+     * Активирует эффект "энергетической батареи", временно повышающий скорость регенерации энергии
+     */
+    public void activateEnergyBattery() {
+        energyBatteryActive = true;
+        energyBatteryTime = ENERGY_BATTERY_DURATION;
+        LogHelper.log("PlayerActor", "Energy battery activated for " + ENERGY_BATTERY_DURATION + " seconds");
+    }
+}
