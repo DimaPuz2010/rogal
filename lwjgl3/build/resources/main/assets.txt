@@ -11,4 +11,5 @@ abilities/lightning.png
 fonts/NeuePixelSans.ttf
 joystick-background.png
 joystick-knob.png
+target-marker.png
 ui/uiskin.json

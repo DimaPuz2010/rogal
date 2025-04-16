@@ -1,5 +1,6 @@
 package ru.myitschool.rogal.Actors;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -10,25 +11,27 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.Gdx;
 
-import ru.myitschool.rogal.Abilities.Abilitis.FrostAuraAbility;
-import ru.myitschool.rogal.Abilities.Ability;
-import ru.myitschool.rogal.Abilities.AbilityManager;
-import ru.myitschool.rogal.Abilities.Abilitis.HealingAuraAbility;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
 import ru.myitschool.rogal.Abilities.Abilitis.EnergyBullet;
+import ru.myitschool.rogal.Abilities.Abilitis.FrostAuraAbility;
+import ru.myitschool.rogal.Abilities.Abilitis.HealingAuraAbility;
 import ru.myitschool.rogal.Abilities.Abilitis.LightningChainAbility;
 import ru.myitschool.rogal.Abilities.Abilitis.OrbitingBladeAbility;
+import ru.myitschool.rogal.Abilities.Ability;
+import ru.myitschool.rogal.Abilities.AbilityManager;
 import ru.myitschool.rogal.CustomHelpers.Helpers.HitboxHelper;
 import ru.myitschool.rogal.CustomHelpers.Vectors.Vector2Helpers;
 import ru.myitschool.rogal.CustomHelpers.utils.GameUI;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Random;
-import java.util.HashMap;
-import java.util.Map;
+import ru.myitschool.rogal.CustomHelpers.utils.PlayerData;
+import ru.myitschool.rogal.Main;
+import ru.myitschool.rogal.Screens.GameScreen;
 
 public class PlayerActor extends Actor {
     TextureRegion texture;
@@ -52,13 +55,18 @@ public class PlayerActor extends Actor {
     // Максимальный уровень способности
     private static final int MAX_ABILITY_LEVEL = 5;
 
-    private static float SPEED = 2.2f;
-    private Touchpad touchpad;
+    private static final float MAX_SPEED = 3.0f; // Максимальная скорость игрока
+    private static float SPEED = 2f;
+    private final Touchpad touchpad;
     private GameUI gameUI;
+    // Переменные для управления с помощью касания
+    private boolean touchControlMode = false; // Режим управления касанием
+    private final Vector2 touchTarget = new Vector2(); // Целевая точка для движения
+    private boolean isMovingToTarget = false; // Флаг движения к цели
 
     // Управление способностями
-    private AbilityManager abilityManager;
-    private Random random = new Random();
+    private final AbilityManager abilityManager;
+    private final Random random = new Random();
 
     // Время неуязвимости после получения урона
     private float invulnerabilityTime = 0f;
@@ -73,6 +81,9 @@ public class PlayerActor extends Actor {
     private static final float COOLDOWN_REDUCTION_PER_LEVEL = 0.015f;
     private static final float EXP_SCALING = 1.2f;
 
+    // Время последнего получения урона
+    private float lastDamageTime = 0f;
+    private float gameTime = 0f;
 
     private interface AbilityConstructor {
         Ability create();
@@ -94,18 +105,52 @@ public class PlayerActor extends Actor {
     private static final float ENERGY_BATTERY_BOOST = 2.0f;
 
     // Система дебаффов
-    private HashMap<String, PlayerDebuff> activeDebuffs = new HashMap<>();
+    private final HashMap<String, PlayerDebuff> activeDebuffs = new HashMap<>();
+    // Обработчик смерти
+    private DeathHandler deathHandler;
+
+    public PlayerActor(final String texturePath, final Touchpad touchpad) {
+        Texture tex = new Texture(texturePath);
+        this.texture = new TextureRegion(tex);
+        this.touchpad = touchpad;
+
+        // Устанавливаем режим управления из настроек
+        this.touchControlMode = PlayerData.getControlMode() == 1;
+        if (touchControlMode) {
+            LogHelper.log("PlayerActor", "Touch control mode enabled");
+        }
+
+        setWidth(this.texture.getTexture().getWidth()*SCALE);
+        setHeight(this.texture.getTexture().getHeight()*SCALE);
+        setOriginX(getWidth()/2);
+        setOriginY(getHeight()/2);
+
+        hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 12);
+        hitbox.setOrigin(getOriginX(), getOriginY());
+
+        // Применяем улучшения из сохраненных данных
+        applyPlayerUpgrades();
+
+        abilityManager = new AbilityManager(this);
+        initAvailableAbilities();
+
+        unlockInitialAbility();
+
+        if (abilityManager != null) {
+            abilityManager.enableAutoUseForAll();
+        }
+    }
 
     /**
      * Класс для хранения информации о дебаффе игрока
      */
     public class PlayerDebuff {
-        private String id;
-        private String name;
-        private float duration;
+        private final String id;
+        private final String name;
+        private final float duration;
         private float remainingTime;
-        private int effectValue;
-        private DebuffType type;
+        private final int effectValue;
+        private final DebuffType type;
 
         public PlayerDebuff(String id, String name, float duration, int effectValue, DebuffType type) {
             this.id = id;
@@ -167,27 +212,124 @@ public class PlayerActor extends Actor {
         CONFUSION         // Спутанность (обратное управление)
     }
 
-    public PlayerActor(final String texturePath, final Touchpad touchpad) {
-        Texture tex = new Texture(texturePath);
-        this.texture = new TextureRegion(tex);
-        this.touchpad = touchpad;
+    /**
+     * Применяет улучшения из сохраненных данных игрока
+     */
+    private void applyPlayerUpgrades() {
+        PlayerData.applyUpgradesToPlayer(this);
+    }
 
-        setWidth(this.texture.getTexture().getWidth()*SCALE);
-        setHeight(this.texture.getTexture().getHeight()*SCALE);
-        setOriginX(getWidth()/2);
-        setOriginY(getHeight()/2);
+    @Override
+    public void act(final float delta) {
+        super.act(delta);
 
-        hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 12);
-        hitbox.setOrigin(getOriginX(), getOriginY());
+        // Увеличиваем счетчик времени игры
+        gameTime += delta;
 
-        abilityManager = new AbilityManager(this);
-        initAvailableAbilities();
-
-        unlockInitialAbility();
-
-        if (abilityManager != null) {
-            abilityManager.enableAutoUseForAll();
+        // Проверяем, открыт ли экран выбора способности
+        boolean isAbilitySelectionActive = false;
+        if (gameUI != null) {
+            Main game = (Main) Gdx.app.getApplicationListener();
+            if (game != null && game.getScreen() instanceof GameScreen) {
+                isAbilitySelectionActive = ((GameScreen) game.getScreen()).isAbilitySelectionPaused();
+            }
         }
+
+        // Обработка перемещения в зависимости от режима управления
+        // Не двигаемся, если выбор способности активен
+        if (!isAbilitySelectionActive) {
+            if (touchControlMode) {
+                // Режим управления касанием
+                // Если есть активная цель для движения
+                if (isMovingToTarget) {
+                    // Вычисляем вектор движения к цели
+                    float dx = touchTarget.x - (getX() + getOriginX());
+                    float dy = touchTarget.y - (getY() + getOriginY());
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+                    // Если мы достигли цели (с небольшим порогом), останавливаемся
+                    if (distance < 5) {
+                        isMovingToTarget = false;
+                    } else {
+                        // Нормализуем вектор движения и умножаем на скорость
+                        float moveX = dx / distance * SPEED;
+                        float moveY = dy / distance * SPEED;
+
+                        // Перемещаем игрока
+                        moveBy(moveX, moveY);
+
+                        // Поворачиваем игрока в направлении движения
+                        float angle = Vector2Helpers.getRotationByVector(moveX, moveY);
+                        if (angle != 0) {
+                            setRotation(angle);
+                        }
+                    }
+                }
+            } else {
+                // Стандартный режим управления джойстиком
+                float nextX = touchpad.getKnobPercentX() * SPEED;
+                float nextY = touchpad.getKnobPercentY() * SPEED;
+
+                // Ограничиваем скорость максимальным значением
+                float currentMoveSpeed = (float) Math.sqrt(nextX * nextX + nextY * nextY);
+                if (currentMoveSpeed > MAX_SPEED) {
+                    float scaleFactor = MAX_SPEED / currentMoveSpeed;
+                    nextX *= scaleFactor;
+                    nextY *= scaleFactor;
+                }
+
+                moveBy(nextX, nextY);
+
+                float angle = Vector2Helpers.getRotationByVector(nextX, nextY);
+                if (angle != 0) {
+                    setRotation(angle);
+                }
+            }
+        }
+
+        // Обновляем положение и поворот хитбокса
+        hitbox.setPosition(getX(), getY());
+        hitbox.setRotation(getRotation() + 90);
+
+        // Регенерация здоровья
+        healthRegenCounter += delta;
+        if (healthRegenCounter >= 1f) {
+            regenerateHealth();
+            healthRegenCounter = 0f;
+        }
+
+        // Регенерация энергии
+        energyRegenCounter += delta;
+        if (energyRegenCounter >= 1f) {
+            regenerateEnergy();
+            energyRegenCounter = 0f;
+        }
+
+        // Обновление таймера неуязвимости
+        if (invulnerabilityTime > 0) {
+            invulnerabilityTime -= delta;
+        }
+
+        // Обновление таймера энергетической батареи
+        if (energyBatteryActive) {
+            energyBatteryTime -= delta;
+            if (energyBatteryTime <= 0) {
+                energyBatteryActive = false;
+                LogHelper.log("PlayerActor", "Energy battery effect ended");
+            }
+        }
+
+        // Обновление дебаффов
+        updateDebuffs(delta);
+
+        checkOverlap();
+
+        // Обновление состояния способностей
+        if (abilityManager != null) {
+            abilityManager.update(delta);
+        }
+
+        gameUI.act(delta);
     }
 
     /**
@@ -276,63 +418,35 @@ public class PlayerActor extends Actor {
         );
     }
 
-    @Override
-    public void act(final float delta) {
-        super.act(delta);
-
-        // Обработка перемещения
-        float nextX = touchpad.getKnobPercentX() * SPEED;
-        float nextY = touchpad.getKnobPercentY() * SPEED;
-        moveBy(nextX, nextY);
-
-        float angle = Vector2Helpers.getRotationByVector(nextX, nextY);
-        if(angle != 0){
-            setRotation(angle);
-        }
-
-        // Обновляем положение и поворот хитбокса
-        hitbox.setPosition(getX(), getY());
-        hitbox.setRotation(getRotation() + 90);
-
-        // Регенерация здоровья
-        healthRegenCounter += delta;
-        if (healthRegenCounter >= 1f) {
-            regenerateHealth();
-            healthRegenCounter = 0f;
-        }
-
-        // Регенерация энергии
-        energyRegenCounter += delta;
-        if (energyRegenCounter >= 1f) {
-            regenerateEnergy();
-            energyRegenCounter = 0f;
-        }
-
-        // Обновление таймера неуязвимости
+    /**
+     * Наносит урон персонажу
+     * @param damage величина урона
+     * @return true если урон был нанесен, false если персонаж неуязвим
+     */
+    public boolean takeDamage(int damage) {
+        // Если у игрока активна неуязвимость, не получает урона
         if (invulnerabilityTime > 0) {
-            invulnerabilityTime -= delta;
-        }
-        
-        // Обновление таймера энергетической батареи
-        if (energyBatteryActive) {
-            energyBatteryTime -= delta;
-            if (energyBatteryTime <= 0) {
-                energyBatteryActive = false;
-                LogHelper.log("PlayerActor", "Energy battery effect ended");
-            }
+            return false;
         }
 
-        // Обновление дебаффов
-        updateDebuffs(delta);
+        // Запоминаем время получения урона
+        lastDamageTime = gameTime;
 
-        checkOverlap();
+        currentHealth -= damage;
+        invulnerabilityTime = MAX_INVULNERABILITY_TIME;
 
-        // Обновление состояния способностей
-        if (abilityManager != null) {
-            abilityManager.update(delta);
+        // Активируем батарею энергии при получении урона
+        if (random.nextFloat() < 0.3f) { // 30% шанс
+            activateEnergyBattery();
         }
 
-        gameUI.act(delta);
+        // Проверяем, жив ли еще игрок
+        if (currentHealth <= 0) {
+            currentHealth = 0;
+            onDeath();
+        }
+
+        return true;
     }
 
     /**
@@ -365,25 +479,37 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Наносит урон персонажу
-     * @param damage величина урона
-     * @return true если урон был нанесен, false если персонаж неуязвим
+     * Повышает уровень персонажа
      */
-    public boolean takeDamage(int damage) {
-        if (invulnerabilityTime > 0) {
-            return false;
+    private void levelUp() {
+        level++;
+
+        // Улучшаем характеристики персонажа
+        int oldMaxHealth = maxHealth;
+        maxHealth += HEALTH_PER_LEVEL;
+        currentHealth += (maxHealth - oldMaxHealth);
+
+        healthRegeneration += REGEN_PER_LEVEL;
+        energyRegeneration += ENERGY_REGEN_PER_LEVEL;
+        maxEnergy += ENERGY_PER_LEVEL;
+        SPEED += SPEED_PER_LEVEL;
+        cooldownMultiplier -= COOLDOWN_REDUCTION_PER_LEVEL;
+
+        // Активируем энергетическую батарею при повышении уровня
+        activateEnergyBattery();
+
+        // Восстанавливаем полную энергию при повышении уровня
+        restoreFullEnergy();
+
+        // Рассчитываем новое требование опыта если уровень не максимальный
+        if (level < MAX_LEVEL) {
+            experienceToNextLevel = Math.round(experienceToNextLevel * EXP_SCALING);
         }
 
-        currentHealth = Math.max(0, currentHealth - damage);
-        updateUIData();
-
-        invulnerabilityTime = MAX_INVULNERABILITY_TIME;
-
-        if (currentHealth <= 0) {
-            onDeath();
+        if (gameUI != null) {
+            gameUI.showLevelUpMessage(level);
+            offerAbilityChoice();
         }
-
-        return true;
     }
 
     /**
@@ -410,37 +536,34 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Повышает уровень персонажа
+     * Возвращает список способностей игрока, которые можно улучшить
+     * @return список способностей, не достигших максимального уровня
      */
-    private void levelUp() {
-        level++;
+    private ArrayList<Ability> getUpgradableAbilities() {
+        ArrayList<Ability> upgradable = new ArrayList<>();
 
-        // Улучшаем характеристики персонажа
-        int oldMaxHealth = maxHealth;
-        maxHealth += HEALTH_PER_LEVEL;
-        currentHealth += (maxHealth - oldMaxHealth);
+        Array<Ability> playerAbilities = abilityManager.getAbilities();
+        for (Ability ability : playerAbilities) {
+            if (ability.getLevel() < MAX_ABILITY_LEVEL) {
+                try {
+                    // Создаем копию способности
+                    Ability abilityCopy = ability.getClass().getDeclaredConstructor().newInstance();
 
-        healthRegeneration += REGEN_PER_LEVEL;
-        energyRegeneration += ENERGY_REGEN_PER_LEVEL;
-        maxEnergy += ENERGY_PER_LEVEL;
-        SPEED += SPEED_PER_LEVEL;
-        cooldownMultiplier -= COOLDOWN_REDUCTION_PER_LEVEL;
-        
-        // Активируем энергетическую батарею при повышении уровня
-        activateEnergyBattery();
+                    // Копируем текущий уровень из оригинальной способности
+                    abilityCopy.setLevel(ability.getLevel());
 
-        // Восстанавливаем полную энергию при повышении уровня
-        restoreFullEnergy();
+                    // Добавляем копию в список доступных для улучшения
+                    upgradable.add(abilityCopy);
 
-        // Рассчитываем новое требование опыта если уровень не максимальный
-        if (level < MAX_LEVEL) {
-            experienceToNextLevel = Math.round(experienceToNextLevel * EXP_SCALING);
+                    LogHelper.log("PlayerActor", "Добавлена для улучшения способность: " +
+                        ability.getName() + " (уровень " + ability.getLevel() + ")");
+                } catch (Exception e) {
+                    Gdx.app.error("PlayerActor", "Ошибка при создании копии способности", e);
+                }
+            }
         }
 
-        if (gameUI != null) {
-            gameUI.showLevelUpMessage(level);
-            offerAbilityChoice();
-        }
+        return upgradable;
     }
 
     /**
@@ -511,25 +634,13 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Возвращает список способностей игрока, которые можно улучшить
-     * @return список способностей, не достигших максимального уровня
+     * Устанавливает обработчик смерти игрока
+     *
+     * @param handler обработчик смерти
      */
-    private ArrayList<Ability> getUpgradableAbilities() {
-        ArrayList<Ability> upgradable = new ArrayList<>();
-
-        Array<Ability> playerAbilities = abilityManager.getAbilities();
-        for (Ability ability : playerAbilities) {
-            if (ability.getLevel() < MAX_ABILITY_LEVEL) {
-                try {
-                    Ability abilityCopy = ability.getClass().getDeclaredConstructor().newInstance();
-                    upgradable.add(abilityCopy);
-                } catch (Exception e) {
-                    Gdx.app.error("PlayerActor", "Ошибка при создании копии способности", e);
-                }
-            }
-        }
-
-        return upgradable;
+    public void setDeathHandler(DeathHandler handler) {
+        this.deathHandler = handler;
+        LogHelper.log("PlayerActor", "Death handler set");
     }
 
     /**
@@ -569,7 +680,21 @@ public class PlayerActor extends Actor {
      * Действия при смерти персонажа
      */
     private void onDeath() {
-        System.out.println("Player died!");
+        LogHelper.log("PlayerActor", "Player died!");
+
+        // Вызываем обработчик смерти, если он установлен
+        if (deathHandler != null) {
+            deathHandler.onPlayerDeath();
+        }
+    }
+
+    /**
+     * Получает максимальное здоровье игрока
+     *
+     * @return максимальное здоровье
+     */
+    public int getMaxHealth() {
+        return maxHealth;
     }
 
     private void checkOverlap(){
@@ -610,16 +735,133 @@ public class PlayerActor extends Actor {
         return this.hitbox;
     }
 
+    /**
+     * Устанавливает максимальное здоровье игрока
+     *
+     * @param maxHealth новое максимальное здоровье
+     */
+    public void setMaxHealth(int maxHealth) {
+        this.maxHealth = maxHealth;
+        this.currentHealth = Math.min(currentHealth, maxHealth);
+        updateUIData();
+    }
+
+    /**
+     * Получает текущее здоровье игрока
+     * @return текущее здоровье
+     */
     public int getCurrentHealth() {
         return currentHealth;
     }
 
-    public int getMaxHealth() {
-        return maxHealth;
+    /**
+     * Устанавливает текущее здоровье игрока
+     *
+     * @param health новое значение здоровья
+     */
+    public void setCurrentHealth(int health) {
+        this.currentHealth = Math.min(health, maxHealth);
+        updateUIData();
     }
 
+    /**
+     * Получает максимальную энергию игрока
+     *
+     * @return максимальная энергия
+     */
+    public int getMaxEnergy() {
+        return maxEnergy;
+    }
+
+    /**
+     * Устанавливает максимальную энергию игрока
+     *
+     * @param maxEnergy новое значение максимальной энергии
+     */
+    public void setMaxEnergy(int maxEnergy) {
+        this.maxEnergy = maxEnergy;
+        this.currentEnergy = Math.min(currentEnergy, maxEnergy);
+        updateUIData();
+    }
+
+    /**
+     * Получает текущую энергию игрока
+     *
+     * @return текущая энергия
+     */
+    public int getCurrentEnergy() {
+        return currentEnergy;
+    }
+
+    /**
+     * Устанавливает текущую энергию игрока
+     *
+     * @param energy новое значение энергии
+     */
+    public void setCurrentEnergy(int energy) {
+        this.currentEnergy = Math.min(energy, maxEnergy);
+        updateUIData();
+    }
+
+    /**
+     * Получает скорость регенерации здоровья
+     * @return скорость регенерации здоровья
+     */
     public float getHealthRegeneration() {
         return healthRegeneration;
+    }
+
+    /**
+     * Устанавливает скорость регенерации здоровья
+     *
+     * @param regeneration новая скорость регенерации
+     */
+    public void setHealthRegeneration(float regeneration) {
+        this.healthRegeneration = regeneration;
+        updateUIData();
+    }
+
+    /**
+     * Получает скорость регенерации энергии
+     *
+     * @return скорость регенерации энергии
+     */
+    public float getEnergyRegeneration() {
+        return energyRegeneration;
+    }
+
+    /**
+     * Устанавливает скорость регенерации энергии
+     *
+     * @param regeneration новая скорость регенерации
+     */
+    public void setEnergyRegeneration(float regeneration) {
+        this.energyRegeneration = regeneration;
+        updateUIData();
+    }
+
+    /**
+     * Восстанавливает энергию игрока
+     */
+    private void regenerateEnergy() {
+        if (currentEnergy < maxEnergy) {
+            // Применяем бонус от батареи энергии, если активна
+            float actualRegen = energyRegeneration;
+
+            if (energyBatteryActive) {
+                actualRegen *= ENERGY_BATTERY_BOOST;
+            }
+
+            energyRegenAccumulator += actualRegen;
+
+            if (energyRegenAccumulator >= 1) {
+                int regenAmount = (int)energyRegenAccumulator;
+                energyRegenAccumulator -= regenAmount;
+
+                currentEnergy = Math.min(currentEnergy + regenAmount, maxEnergy);
+                updateUIData();
+            }
+        }
     }
 
     public int getLevel() {
@@ -644,27 +886,6 @@ public class PlayerActor extends Actor {
 
     public float getCooldownMultiplier() {
         return cooldownMultiplier;
-    }
-
-    public void setCurrentHealth(int health) {
-        this.currentHealth = Math.min(health, maxHealth);
-        updateUIData();
-    }
-
-    public void setMaxHealth(int maxHealth) {
-        this.maxHealth = maxHealth;
-        this.currentHealth = Math.min(currentHealth, maxHealth);
-        updateUIData();
-    }
-
-    public void setHealthRegeneration(float regen) {
-        this.healthRegeneration = regen;
-        updateUIData();
-    }
-
-    public void setLevel(int level) {
-        this.level = Math.max(1, Math.min(level, MAX_LEVEL));
-        updateUIData();
     }
 
     /**
@@ -727,87 +948,17 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Получение текущего значения энергии
-     * @return текущее количество энергии
-     */
-    public int getCurrentEnergy() {
-        return currentEnergy;
-    }
-
-    /**
-     * Получение максимального значения энергии
-     * @return максимальное количество энергии
-     */
-    public int getMaxEnergy() {
-        return maxEnergy;
-    }
-
-    /**
-     * Получение значения регенерации энергии
-     * @return значение регенерации энергии в секунду
-     */
-    public float getEnergyRegeneration() {
-        return energyRegeneration;
-    }
-
-    /**
-     * Устанавливает текущее значение энергии
-     * @param energy новое значение энергии
-     */
-    public void setCurrentEnergy(int energy) {
-        this.currentEnergy = Math.min(energy, maxEnergy);
-        updateUIData();
-    }
-
-    /**
-     * Устанавливает максимальное значение энергии
-     * @param maxEnergy новое максимальное значение энергии
-     */
-    public void setMaxEnergy(int maxEnergy) {
-        this.maxEnergy = maxEnergy;
-        this.currentEnergy = Math.min(currentEnergy, maxEnergy);
-        updateUIData();
-    }
-
-    /**
-     * Устанавливает значение регенерации энергии
-     * @param regen новое значение регенерации энергии
-     */
-    public void setEnergyRegeneration(float regen) {
-        this.energyRegeneration = regen;
-        updateUIData();
-    }
-
-    /**
-     * Восстанавливает энергию игрока
-     */
-    private void regenerateEnergy() {
-        if (currentEnergy < maxEnergy) {
-            // Применяем бонус от батареи энергии, если активна
-            float actualRegen = energyRegeneration;
-            
-            if (energyBatteryActive) {
-                actualRegen *= ENERGY_BATTERY_BOOST;
-            }
-            
-            energyRegenAccumulator += actualRegen;
-            
-            if (energyRegenAccumulator >= 1) {
-                int regenAmount = (int)energyRegenAccumulator;
-                energyRegenAccumulator -= regenAmount;
-                
-                currentEnergy = Math.min(currentEnergy + regenAmount, maxEnergy);
-                updateUIData();
-            }
-        }
-    }
-
-    /**
      * Использует энергию для способности
      * @param cost стоимость энергии
      * @return true если успешно потрачена энергия
      */
     public boolean useEnergy(float cost) {
+        // Если включен режим бесплатных способностей, не тратим энергию
+        if (PlayerData.isFreeAbilitiesEnabled()) {
+            return true;
+        }
+
+        // Иначе проверяем, достаточно ли энергии
         int energyCost = Math.round(cost);
         if (currentEnergy >= energyCost) {
             currentEnergy -= energyCost;
@@ -815,6 +966,15 @@ public class PlayerActor extends Actor {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Устанавливает скорость игрока
+     * @param speed новая скорость
+     */
+    public void setSpeed(float speed) {
+        // Ограничиваем максимальной скоростью
+        SPEED = Math.min(speed, MAX_SPEED);
     }
 
     /**
@@ -866,11 +1026,20 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Устанавливает скорость игрока
-     * @param speed новая скорость
+     * Получает максимальную скорость игрока
+     * @return максимальная скорость
      */
-    public void setSpeed(float speed) {
-        SPEED = speed;
+    public float getMaxSpeed() {
+        return MAX_SPEED;
+    }
+
+    /**
+     * Возвращает время последнего получения урона
+     *
+     * @return время в секундах
+     */
+    public float getLastDamageTime() {
+        return lastDamageTime;
     }
 
     /**
@@ -1062,5 +1231,43 @@ public class PlayerActor extends Actor {
         energyBatteryActive = true;
         energyBatteryTime = ENERGY_BATTERY_DURATION;
         LogHelper.log("PlayerActor", "Energy battery activated for " + ENERGY_BATTERY_DURATION + " seconds");
+    }
+
+    /**
+     * Метод для обновления режима управления
+     * Необходимо вызывать при изменении настроек управления
+     */
+    public void updateControlMode() {
+        this.touchControlMode = PlayerData.getControlMode() == 1;
+        // Сбрасываем флаг движения при смене режима
+        isMovingToTarget = false;
+        LogHelper.log("PlayerActor", "Control mode updated: " + (touchControlMode ? "touch" : "joystick"));
+    }
+
+    /**
+     * Проверяет, движется ли игрок к целевой точке в режиме управления касанием
+     *
+     * @return true если игрок движется к цели
+     */
+    public boolean isMovingToTarget() {
+        return isMovingToTarget;
+    }
+
+    /**
+     * Устанавливает целевую точку для движения в режиме касания
+     *
+     * @param x координата X
+     * @param y координата Y
+     */
+    public void setTouchTarget(float x, float y) {
+        touchTarget.set(x, y);
+        isMovingToTarget = true;
+    }
+
+    /**
+     * Интерфейс для обработки смерти игрока
+     */
+    public interface DeathHandler {
+        void onPlayerDeath();
     }
 }

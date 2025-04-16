@@ -14,6 +14,7 @@ public class FontManager {
     private static BitmapFont titleFont;
     private static BitmapFont buttonFont;
     private static BitmapFont regularFont;
+    private static BitmapFont smallFont;
 
     /**
      * Инициализирует все шрифты для игры
@@ -27,6 +28,9 @@ public class FontManager {
 
         // Создаем шрифт для обычного текста
         regularFont = generateFont("fonts/NeuePixelSans.ttf", 20, Color.WHITE);
+
+        // Создаем малый шрифт для таблиц
+        smallFont = generateFont("fonts/NeuePixelSans.ttf", 16, Color.WHITE);
     }
 
     /**
@@ -68,9 +72,14 @@ public class FontManager {
         return regularFont;
     }
 
+    public static BitmapFont getSmallFont() {
+        return smallFont;
+    }
+
     public static void dispose() {
         if (titleFont != null) titleFont.dispose();
         if (buttonFont != null) buttonFont.dispose();
         if (regularFont != null) regularFont.dispose();
+        if (smallFont != null) smallFont.dispose();
     }
 }

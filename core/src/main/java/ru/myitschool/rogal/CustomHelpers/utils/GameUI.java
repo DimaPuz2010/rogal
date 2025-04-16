@@ -5,23 +5,38 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import ru.myitschool.rogal.Actors.PlayerActor;
-import ru.myitschool.rogal.Abilities.Ability;
-import ru.myitschool.rogal.Abilities.AbilityManager;
+import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Disposable;
+
 import java.util.ArrayList;
 import java.util.function.Consumer;
-import com.badlogic.gdx.utils.Array;
+
+import ru.myitschool.rogal.Abilities.Ability;
+import ru.myitschool.rogal.Abilities.AbilityManager;
+import ru.myitschool.rogal.Actors.PlayerActor;
+import ru.myitschool.rogal.Enemies.EnemyManager.WaveListener;
+import ru.myitschool.rogal.Main;
+import ru.myitschool.rogal.Screens.GameScreen;
 
 /**
  * Класс для создания и управления игровым интерфейсом с использованием UIHelper
@@ -33,7 +48,7 @@ public class GameUI implements Disposable {
     private AbilityManager abilityManager;
     private final Skin skin;
     private float uiScale = 1.0f;
-    private Texture skillSlot;
+    private final Texture skillSlot;
 
     // UI элементы
     private Table mainTable;
@@ -61,6 +76,16 @@ public class GameUI implements Disposable {
     private Array<Label> levelLabels; // Метки для отображения уровней способностей
     private Window abilityInfoWindow; // Окно с информацией о способности
 
+    // Элементы для отображения таймера волны
+    private Label waveTimerLabel;
+    private ProgressBar waveTimerBar;
+    private Label waveBreakLabel;
+
+    // Элементы интерфейса для режима управления касанием
+    private final TextureRegion targetMarker;
+    private boolean showTargetMarker = false;
+    private final Vector2 targetPosition = new Vector2();
+
     public GameUI(Stage stage, PlayerActor player) {
         this.stage = stage;
         this.player = player;
@@ -79,6 +104,15 @@ public class GameUI implements Disposable {
 
         // Создаем окно для информации о способностях
         createAbilityInfoWindow();
+
+        // Добавляем интерфейс таймера волны
+        createWaveTimerUI();
+
+        // Загружаем текстуру для маркера целевой точки
+        targetMarker = new TextureRegion(new Texture("target-marker.png"));
+
+        // Проверяем режим управления
+        showTargetMarker = PlayerData.getControlMode() == 1;
 
         createUI();
     }
@@ -527,12 +561,19 @@ public class GameUI implements Disposable {
         }
     }
 
+    /**
+     * Обновляет информацию о текущем уровне сложности (волна)
+     *
+     * @param level номер текущей волны
+     */
     public void updateDifficultyLevel(int level) {
-        difficultyLabel.setText("Уровень " + level);
+        if (difficultyLabel != null) {
+            difficultyLabel.setText("Волна " + level);
+        }
     }
 
     public void setUIScaleFromSettings(int scalePercent) {
-        float newScale = Math.max(0.8f, Math.min(1.5f, scalePercent / 100f));
+        float newScale = Math.max(0.5f, Math.min(1.5f, scalePercent / 100f));
         if (newScale != uiScale) {
             uiScale = newScale;
             applyUIScale();
@@ -555,6 +596,9 @@ public class GameUI implements Disposable {
 
     public void showAbilityChoiceDialog(ArrayList<Ability> abilities, Consumer<Ability> abilitySelectedCallback) {
         if (abilities == null || abilities.isEmpty()) return;
+
+        // Приостанавливаем игру
+        pauseGameForAbilitySelection(true);
 
         // Создаем окно для выбора способности
         final Window window = new Window("Выберите способность", skin);
@@ -584,6 +628,9 @@ public class GameUI implements Disposable {
                         abilitySelectedCallback.accept(ability);
                     }
 
+                    // Возобновляем игру
+                    pauseGameForAbilitySelection(false);
+
                     // Закрываем окно
                     window.remove();
                 }
@@ -608,6 +655,19 @@ public class GameUI implements Disposable {
             (stage.getWidth() - window.getWidth()) / 2,
             (stage.getHeight() - window.getHeight()) / 2
         );
+
+        // Обработчик удаления окна, чтобы восстановить игру, если окно будет закрыто не через выбор
+        window.addListener(new InputListener() {
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                if (keycode == Input.Keys.ESCAPE) {
+                    pauseGameForAbilitySelection(false);
+                    window.remove();
+                    return true;
+                }
+                return false;
+            }
+        });
 
         // Добавляем окно на сцену
         stage.addActor(window);
@@ -681,28 +741,52 @@ public class GameUI implements Disposable {
         Label nameLabel = new Label(ability.getName(), skin, "title");
 
         // Уровень способности
-        Label levelLabel = new Label("Уровень " + ability.getLevel(), skin);
+        String levelText = "Уровень " + ability.getLevel();
+
+        // Проверяем, есть ли уже такая способность у игрока и может ли она быть улучшена
+        boolean hasAbility = false;
+        boolean isUpgradable = false;
+        int currentLevel = 0;
+
+        if (player != null && player.getAbilityManager() != null) {
+            for (Ability playerAbility : player.getAbilityManager().getAbilities()) {
+                if (playerAbility.getClass() == ability.getClass()) {
+                    hasAbility = true;
+                    currentLevel = playerAbility.getLevel();
+                    isUpgradable = currentLevel < player.getMaxAbilityLevel();
+
+                    // Если это улучшение существующей способности, показываем новый уровень
+                    if (isUpgradable) {
+                        levelText = "Уровень " + currentLevel + " -> " + (currentLevel + 1);
+                    } else {
+                        levelText = "Уровень " + currentLevel + " (макс.)";
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        Label levelLabel = new Label(levelText, skin);
         levelLabel.setColor(1f, 0.8f, 0.2f, 1f);
 
         // Описание способности
         Label descriptionLabel = new Label(ability.getDescription(), skin);
         descriptionLabel.setWrap(true);
 
-        // Проверяем, есть ли уже такая способность у игрока
-        if (player != null && player.getAbilityManager() != null) {
-            boolean hasAbility = false;
-            for (Ability playerAbility : player.getAbilityManager().getAbilities()) {
-                if (playerAbility.getClass() == ability.getClass()) {
-                    hasAbility = true;
-                    break;
-                }
-            }
-            if (hasAbility) {
-                // Выделяем имеющуюся способность
-                abilityTable.setBackground(skin.getDrawable("button-down"));
-                Label ownedLabel = new Label("Уже имеется", skin);
-                ownedLabel.setColor(0.2f, 1f, 0.2f, 1f);
-                abilityTable.add(ownedLabel).colspan(2).padBottom(5).row();
+        // Если у игрока уже есть эта способность
+        if (hasAbility) {
+            // Выделяем имеющуюся способность
+            abilityTable.setBackground(skin.getDrawable("button-down"));
+
+            if (isUpgradable) {
+                Label upgradeLabel = new Label("Улучшение", skin);
+                upgradeLabel.setColor(0.2f, 1f, 0.2f, 1f);
+                abilityTable.add(upgradeLabel).colspan(2).padBottom(5).row();
+            } else {
+                Label maxLevelLabel = new Label("Максимальный уровень", skin);
+                maxLevelLabel.setColor(1f, 0.5f, 0.2f, 1f);
+                abilityTable.add(maxLevelLabel).colspan(2).padBottom(5).row();
             }
         }
 
@@ -761,7 +845,7 @@ public class GameUI implements Disposable {
         if (player == null || player.getAbilityManager() == null) return;
 
         Array<Ability> abilities = player.getAbilityManager().getAbilities();
-        
+
         // Обновляем каждый слот
         for (int i = 0; i < abilitySlots.size; i++) {
             Image icon = abilityIcons.get(i);
@@ -772,7 +856,7 @@ public class GameUI implements Disposable {
             // Проверяем, есть ли способность для этого слота
             if (i < abilities.size) {
                 Ability ability = abilities.get(i);
-                
+
                 // Обновляем иконку
                 if (ability.getIcon() != null) {
                     icon.setDrawable(new TextureRegionDrawable(new TextureRegion(ability.getIcon())));
@@ -807,6 +891,212 @@ public class GameUI implements Disposable {
                 cooldownOverlay.setVisible(false);
                 levelLabel.setVisible(false);
             }
+        }
+    }
+
+    /**
+     * Создает интерфейс для отображения таймера волны
+     */
+    private void createWaveTimerUI() {
+        // Создаем контейнер для таймера волны
+        Table waveTimerTable = new Table();
+        waveTimerTable.top().right();
+        waveTimerTable.setPosition(Main.SCREEN_WIDTH - 210, Main.SCREEN_HEIGHT - 30);
+
+        // Стиль метки для таймера
+        Label.LabelStyle timerStyle = new Label.LabelStyle(FontManager.getRegularFont(), Color.WHITE);
+
+        // Метка для отображения оставшегося времени
+        waveTimerLabel = new Label("Волна 1: 00:00", timerStyle);
+
+        // Стиль для прогресс-бара
+        ProgressBar.ProgressBarStyle progressBarStyle = new ProgressBar.ProgressBarStyle();
+        Pixmap pixmap = new Pixmap(1, 10, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.3f, 0.3f, 0.7f, 1f));
+        pixmap.fill();
+        progressBarStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+
+        pixmap.setColor(new Color(0.2f, 0.6f, 1f, 1f));
+        pixmap.fill();
+        progressBarStyle.knob = new TextureRegionDrawable(new TextureRegion(new Texture(pixmap)));
+
+        pixmap.dispose();
+
+        // Создаем прогресс-бар для визуального отображения таймера
+        waveTimerBar = new ProgressBar(0, 1, 0.01f, false, progressBarStyle);
+        waveTimerBar.setValue(1);
+        waveTimerBar.setWidth(200);
+
+        // Метка для отображения перерыва между волнами
+        waveBreakLabel = new Label("Следующая волна через: 5", timerStyle);
+        waveBreakLabel.setVisible(false);
+
+        // Добавляем элементы в таблицу
+        waveTimerTable.add(waveTimerLabel).padBottom(5).right().row();
+        waveTimerTable.add(waveTimerBar).width(200).height(10).padBottom(5).right().row();
+        waveTimerTable.add(waveBreakLabel).right();
+
+        // Добавляем таблицу в стейдж
+        this.stage.addActor(waveTimerTable);
+    }
+
+    /**
+     * Создает слушателя событий волны для EnemyManager
+     *
+     * @return слушатель событий волны
+     */
+    public WaveListener createWaveListener() {
+        return new WaveListener() {
+            @Override
+            public void onWaveStart(int waveNumber) {
+                // Обновляем отображение при начале волны
+                waveTimerLabel.setVisible(true);
+                waveTimerBar.setVisible(true);
+                waveBreakLabel.setVisible(false);
+
+                // Обновляем номер волны в UI
+                updateDifficultyLevel(waveNumber);
+
+                // Показываем сообщение о начале волны
+                showFloatingMessage("Волна " + waveNumber + " началась!");
+            }
+
+            @Override
+            public void onWaveEnd(int waveNumber) {
+                // Показываем сообщение об окончании волны
+                showFloatingMessage("Волна " + waveNumber + " завершена!");
+            }
+
+            @Override
+            public void onWaveTimerUpdate(float remainingTime, float totalTime) {
+                // Обновляем таймер волны
+                updateWaveTimer(remainingTime, totalTime);
+            }
+
+            @Override
+            public void onWaveBreakUpdate(float remainingTime, float totalTime) {
+                // Обновляем таймер перерыва между волнами
+                updateWaveBreakTimer(remainingTime, totalTime);
+            }
+        };
+    }
+
+    /**
+     * Обновляет отображение таймера волны
+     *
+     * @param remainingTime оставшееся время в секундах
+     * @param totalTime     общее время волны в секундах
+     */
+    private void updateWaveTimer(float remainingTime, float totalTime) {
+        // Форматируем время в минуты:секунды
+        int minutes = (int) (remainingTime / 60);
+        int seconds = (int) (remainingTime % 60);
+        String timeString = String.format("%02d:%02d", minutes, seconds);
+
+        // Обновляем текст
+        String waveText = difficultyLabel.getText().toString();
+        String waveNumber = "1";
+        if (waveText != null && waveText.contains(" ")) {
+            String[] parts = waveText.split(" ");
+            if (parts.length > 1) {
+                waveNumber = parts[1];
+            }
+        }
+        waveTimerLabel.setText("Волна " + waveNumber + ": " + timeString);
+
+        // Обновляем прогресс-бар
+        waveTimerBar.setValue(remainingTime / totalTime);
+
+        // Отображаем соответствующие элементы
+        waveTimerLabel.setVisible(true);
+        waveTimerBar.setVisible(true);
+        waveBreakLabel.setVisible(false);
+    }
+
+    /**
+     * Обновляет отображение таймера перерыва между волнами
+     *
+     * @param remainingTime оставшееся время перерыва в секундах
+     * @param totalTime     общее время перерыва в секундах
+     */
+    private void updateWaveBreakTimer(float remainingTime, float totalTime) {
+        // Форматируем оставшееся время перерыва
+        int seconds = (int) Math.ceil(remainingTime);
+
+        // Обновляем текст
+        waveBreakLabel.setText("Следующая волна через: " + seconds);
+
+        // Отображаем соответствующие элементы
+        waveTimerLabel.setVisible(false);
+        waveTimerBar.setVisible(false);
+        waveBreakLabel.setVisible(true);
+    }
+
+    /**
+     * Приостанавливает или возобновляет игру для выбора способности
+     *
+     * @param pause true для приостановки, false для возобновления
+     */
+    private void pauseGameForAbilitySelection(boolean pause) {
+        if (player == null || player.getStage() == null) {
+            return;
+        }
+
+        // Получаем ссылку на Game
+        Main game = (Main) Gdx.app.getApplicationListener();
+        if (game != null && game.getScreen() instanceof GameScreen) {
+            GameScreen gameScreen = (GameScreen) game.getScreen();
+            gameScreen.setAbilitySelectionPaused(pause);
+            LogHelper.log("GameUI", "Game " + (pause ? "paused" : "resumed") + " for ability selection");
+        } else {
+            LogHelper.error("GameUI", "Could not find GameScreen to pause/resume");
+        }
+    }
+
+    /**
+     * Устанавливает целевую точку для режима управления касанием
+     *
+     * @param x координата X
+     * @param y координата Y
+     */
+    public void setTargetPosition(float x, float y) {
+        targetPosition.set(x, y);
+    }
+
+    /**
+     * Показывает или скрывает маркер целевой точки
+     *
+     * @param show true - показать, false - скрыть
+     */
+    public void showTargetMarker(boolean show) {
+        showTargetMarker = show;
+    }
+
+    /**
+     * Обновляет настройки UI при смене режима управления
+     */
+    public void updateControlMode() {
+        showTargetMarker = PlayerData.getControlMode() == 1;
+    }
+
+    /**
+     * Рисует маркер целевой точки в режиме управления касанием
+     *
+     * @param batch объект для отрисовки
+     */
+    public void drawTargetMarker(Batch batch) {
+        // В режиме управления касанием рисуем маркер целевой точки
+        if (showTargetMarker && player != null && player.isMovingToTarget()) {
+            float width = targetMarker.getRegionWidth() * uiScale * 0.25f;
+            float height = targetMarker.getRegionHeight() * uiScale * 0.25f;
+
+            batch.draw(
+                targetMarker,
+                targetPosition.x - width / 2,  // Центрируем маркер с учетом масштаба
+                targetPosition.y - height / 2, // Центрируем маркер с учетом масштаба
+                width,                         // Масштабированная ширина
+                height                         // Масштабированная высота
+            );
         }
     }
 

@@ -5,8 +5,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 
-import ru.myitschool.rogal.Actors.PlayerActor;
 import ru.myitschool.rogal.Actors.EnemyActor;
+import ru.myitschool.rogal.Actors.PlayerActor;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 
 /**
@@ -44,7 +44,7 @@ public abstract class Ability {
         this.description = description;
         this.cooldown = cooldown;
         this.range = range;
-        
+
     }
 
     /**
@@ -65,21 +65,21 @@ public abstract class Ability {
         if (!canActivate()) {
             return false;
         }
-        
+
         // Проверка наличия достаточного количества энергии (если есть стоимость)
         if (energyCost > 0 && owner != null) {
             if (owner.getCurrentEnergy() < energyCost) {
                 // Недостаточно энергии для использования
                 return false;
             }
-            
+
             // Вычитаем стоимость энергии
             owner.useEnergy(energyCost);
         }
-        
+
         // Применение эффекта способности
         boolean success = use(position);
-        
+
         if (success) {
             // Устанавливаем кулдаун с учетом множителя кулдауна игрока
             if (owner != null) {
@@ -87,14 +87,14 @@ public abstract class Ability {
             } else {
                 currentCooldown = cooldown;
             }
-            
+
             isActive = true;
             activeTime = 0f;
         }
-        
+
         return success;
     }
-    
+
     /**
      * Метод проверки возможности активации способности
      * @return true если способность может быть использована
@@ -102,7 +102,7 @@ public abstract class Ability {
     public boolean canActivate() {
         return currentCooldown <= 0 && (owner == null || owner.getCurrentHealth() > 0);
     }
-    
+
     /**
      * Обновление состояния способности
      * @param delta время между кадрами
@@ -115,19 +115,19 @@ public abstract class Ability {
                 currentCooldown = 0;
             }
         }
-        
+
         // Обновляем активное состояние способности
         if (isActive) {
             activeTime += delta;
             updateActive(delta);
         }
-        
+
         // Проверяем автоматическое использование
         if (autoUse && canActivate() && owner != null) {
             tryAutoActivate(delta);
         }
     }
-    
+
     /**
      * Метод для обновления стоимости энергии при повышении уровня
      */
@@ -138,32 +138,32 @@ public abstract class Ability {
             float baseCost = getEnergyCost();
             float levelMultiplier = 1.0f + ((level - 1) * 0.15f);
             setEnergyCost(Math.round(baseCost * levelMultiplier));
-            
+
             // Логгируем изменение стоимости
             LogHelper.debug("Ability", name + " level " + level + " energy cost updated to " + energyCost);
         }
     }
-    
+
     /**
      * Повышает уровень способности
      * @return новый уровень способности или -1, если достигнут максимум
      */
     public int levelUp() {
         if (owner == null) return -1;
-        
+
         int maxLevel = owner.getMaxAbilityLevel();
         if (level >= maxLevel) {
             return -1;
         }
-        
+
         level++;
         onLevelUp();
         updateEnergyCostOnLevelUp();
-        
+
         LogHelper.log("Ability", name + " leveled up to " + level);
         return level;
     }
-    
+
     /**
      * Возвращает текущий процент перезарядки (0.0 - 1.0)
      * @return значение от 0.0 (готова) до 1.0 (полностью на кулдауне)
@@ -188,7 +188,7 @@ public abstract class Ability {
      * @return строка с описанием улучшения
      */
     public String getUpgradeDescription() {
-        return description + "\nУровень: " + level + " → " + (level + 1) + "\n(Улучшение)";
+        return description + "\nУровень: " + level + " -> " + (level + 1) + "\n(Улучшение)";
     }
 
     /**
@@ -217,11 +217,23 @@ public abstract class Ability {
     }
 
     /**
-     * Возвращает уровень способности
+     * Возвращает текущий уровень способности
      * @return текущий уровень
      */
     public int getLevel() {
         return level;
+    }
+
+    /**
+     * Устанавливает уровень способности
+     *
+     * @param level новый уровень
+     */
+    public void setLevel(int level) {
+        this.level = level;
+
+        // Обновляем стоимость энергии согласно новому уровню
+        updateEnergyCostOnLevelUp();
     }
 
     /**
@@ -270,13 +282,13 @@ public abstract class Ability {
      * @return true если способность успешно применена
      */
     protected abstract boolean use(Vector2 position);
-    
+
     /**
      * Обновление активного состояния способности - должно быть переопределено если способность имеет длительность
      * @param delta время между кадрами
      */
     protected abstract void updateActive(float delta);
-    
+
     /**
      * Действия при повышении уровня способности - должны быть переопределены в дочерних классах
      */
@@ -286,7 +298,7 @@ public abstract class Ability {
     public float getEnergyCost() {
         return energyCost;
     }
-    
+
     // Новый метод для установки стоимости энергии
     public void setEnergyCost(float energyCost) {
         this.energyCost = energyCost;
@@ -300,14 +312,14 @@ public abstract class Ability {
         if (!canActivate()) {
             return false;
         }
-        
+
         // Проверяем, достаточно ли энергии у игрока
         if (energyCost > 0 && owner != null) {
             if (owner.getCurrentEnergy() < energyCost) {
                 return false;
             }
         }
-        
+
         // Применяем эффект способности (на позиции игрока)
         return activate(new Vector2(owner.getX() + owner.getOriginX(), owner.getY() + owner.getOriginY()));
     }
@@ -336,35 +348,35 @@ public abstract class Ability {
         if (!autoUse || !isUnlocked() || !canActivate() || owner == null) {
             return;
         }
-        
+
         // Обновляем таймер
         autoUseTimer += delta;
-        
+
         // Проверяем готовность способности
         if (autoUseTimer < 0.5f) {
             return;
         }
-        
+
         autoUseTimer = 0f;
-        
+
         // Проверяем наличие врагов на сцене
         Stage stage = owner.getStage();
         if (stage == null) {
             return;
         }
-        
+
         int enemiesCount = 0;
         for (Actor actor : stage.getActors()) {
             if (actor instanceof EnemyActor) {
                 enemiesCount++;
             }
         }
-        
+
         if (enemiesCount == 0) {
             LogHelper.debug("Ability", "No enemies on stage to use ability: " + name);
             return;
         }
-        
+
         // Проверяем, достаточно ли энергии для всех автоматически активируемых способностей
         float totalAutoUseCost = 0;
         for (Ability ability : owner.getAbilityManager().getAbilities()) {
@@ -372,43 +384,43 @@ public abstract class Ability {
                 totalAutoUseCost += ability.getEnergyCost();
             }
         }
-        
+
         // Если текущей энергии меньше, чем суммарная стоимость всех авто-способностей,
         // то используем только дешевые способности или ждем восстановления
         if (owner.getCurrentEnergy() < totalAutoUseCost) {
-            // Если эта способность относительно дешевая (менее 25% от общей стоимости), 
+            // Если эта способность относительно дешевая (менее 25% от общей стоимости),
             // то все равно пытаемся использовать её
             if (getEnergyCost() > totalAutoUseCost * 0.25f) {
                 LogHelper.debug("Ability", "Not enough energy for all auto abilities. Prioritizing cheaper ones.");
                 return;
             }
         }
-        
+
         // Находим ближайшего врага
         Vector2 targetPosition = findNearestEnemyPosition(range);
-        
+
         if (targetPosition != null) {
             // Проверяем, хватает ли энергии
             if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
-                LogHelper.debug("Ability", "Not enough energy for " + name + ": " + 
+                LogHelper.debug("Ability", "Not enough energy for " + name + ": " +
                               owner.getCurrentEnergy() + "/" + energyCost);
                 return;
             }
-        
+
             // Пытаемся использовать способность
             boolean success = activate(targetPosition);
-            
+
             // Более подробное логирование для отладки
             if (success) {
-                LogHelper.log("Ability", "Ability auto-used: " + name + 
+                LogHelper.log("Ability", "Ability auto-used: " + name +
                             ", enemies on stage: " + enemiesCount);
             } else {
                 // Выведем причину, почему не удалось активировать
                 if (currentCooldown > 0) {
-                    LogHelper.debug("Ability", "Failed to use " + name + ": on cooldown (" + 
+                    LogHelper.debug("Ability", "Failed to use " + name + ": on cooldown (" +
                                   String.format("%.1f", currentCooldown) + " sec)");
                 } else if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
-                    LogHelper.debug("Ability", "Failed to use " + name + ": not enough energy (" + 
+                    LogHelper.debug("Ability", "Failed to use " + name + ": not enough energy (" +
                                   owner.getCurrentEnergy() + "/" + energyCost + ")");
                 } else {
                     LogHelper.debug("Ability", "Failed to use " + name + " for unknown reason");
@@ -425,10 +437,10 @@ public abstract class Ability {
      */
     protected Vector2 findTargetPosition() {
         if (owner == null || owner.getStage() == null) return null;
-        
+
         // По умолчанию используем позицию игрока
         Vector2 playerPos = new Vector2(owner.getX() + owner.getOriginX(), owner.getY() + owner.getOriginY());
-        
+
         // Для атакующих способностей нужно найти ближайшего врага
         if (abilityType == AbilityType.ATTACK) {
             Vector2 enemyPos = owner.findNearestEnemyPosition(range);
@@ -445,7 +457,7 @@ public abstract class Ability {
                     return new Vector2(playerPos).add(direction.scl(range));
                 }
             }
-        } 
+        }
         // Для защитных/лечащих способностей используем позицию игрока
         else if (abilityType == AbilityType.DEFENSIVE) {
             // Для защитных способностей проверяем, нужно ли их использовать
@@ -476,12 +488,12 @@ public abstract class Ability {
      */
     protected Vector2 findNearestEnemyPosition(float searchRange) {
         if (owner == null || owner.getStage() == null) return null;
-        
+
         Stage stage = owner.getStage();
         Vector2 playerPos = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
         Vector2 closestEnemyPos = null;
         float closestDistance = searchRange;
-        
+
         for (Actor actor : stage.getActors()) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
@@ -489,7 +501,7 @@ public abstract class Ability {
                     enemy.getX() + enemy.getWidth()/2,
                     enemy.getY() + enemy.getHeight()/2
                 );
-                
+
                 float distance = playerPos.dst(enemyPos);
                 if (distance < closestDistance) {
                     closestDistance = distance;
@@ -497,7 +509,7 @@ public abstract class Ability {
                 }
             }
         }
-        
+
         return closestEnemyPos;
     }
-} 
+}

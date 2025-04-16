@@ -15,8 +15,8 @@ import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 
 public class EnemyActor extends Actor {
     // Текстура и полигон для столкновений
-    private TextureRegion texture;
-    private Polygon hitbox;
+    private final TextureRegion texture;
+    private final Polygon hitbox;
 
     // Атрибуты врага
     private int maxHealth = 30;
@@ -36,9 +36,104 @@ public class EnemyActor extends Actor {
 
     // Отслеживание игрока
     private PlayerActor targetPlayer;
-    private Vector2 randomDirection = new Vector2(1, 0);
+    private final Vector2 randomDirection = new Vector2(1, 0);
 
     private boolean isSlowed = false; // Флаг замедления
+
+    // Расстояние до игрока
+    private float distanceToPlayer = 0;
+    private DeathHandler deathHandler;
+    private BehaviorType behaviorType = BehaviorType.DIRECT;
+    private float behaviorTimer = 0;
+    private float behaviorDuration = 3.0f;
+    private boolean hasSpecialAttack = false;
+    private float specialAttackCooldown = 0;
+    /**
+     * Новый конструктор для совместимости с EnemyManager
+     * @param health здоровье
+     * @param damage урон
+     * @param speed скорость
+     * @param reward награда за убийство
+     * @param position начальная позиция
+     * @param target цель (игрок)
+     */
+    public EnemyActor(int health, int damage, float speed, int reward, Vector2 position, PlayerActor target) {
+        // Используем базовую текстуру для противника
+        Texture tex = new Texture("Damaged_Ship_03.png");
+        texture = new TextureRegion(tex);
+
+        // Настройка размеров и начального положения
+        setWidth(texture.getTexture().getWidth() * SCALE);
+        setHeight(texture.getTexture().getHeight() * SCALE);
+        setOriginX(getWidth() / 2);
+        setOriginY(getHeight() / 2);
+
+        // Установка позиции
+        setPosition(position.x, position.y);
+
+        // Создание хитбокса
+        hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 20);
+        hitbox.setOrigin(getOriginX(), getOriginY());
+
+
+        // Установка характеристик
+        this.maxHealth = health;
+        this.currentHealth = health;
+        this.collisionDamage = damage;
+        this.baseSpeed = speed;
+        this.currentSpeed = speed;
+        this.rewardExp = reward;
+
+        // Установка цели
+        this.targetPlayer = target;
+
+        LogHelper.log("EnemyActor", "Created new enemy with health: " + health);
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+
+        if (isDead) return;
+
+        // Обновление таймера неуязвимости
+        if (invulnerabilityTime > 0) {
+            invulnerabilityTime -= delta;
+        }
+
+        // Поиск игрока, если еще не найден
+        if (targetPlayer == null) {
+            findPlayer();
+        }
+
+        // Движение врага
+        if (targetPlayer != null) {
+            moveTowardsPlayer(delta);
+        }
+
+        // Обновление хитбокса
+        updateHitbox();
+
+        // Обновляем таймер поведения
+        behaviorTimer += delta;
+        if (behaviorTimer >= behaviorDuration) {
+            updateBehavior();
+        }
+
+        // Обновляем кулдаун специальной атаки
+        if (hasSpecialAttack && specialAttackCooldown > 0) {
+            specialAttackCooldown -= delta;
+
+            // Если кулдаун истек и игрок в зоне поражения, используем специальную атаку
+            if (specialAttackCooldown <= 0 && distanceToPlayer < 200) {
+                performSpecialAttack();
+                specialAttackCooldown = MathUtils.random(5.0f, 10.0f);
+            }
+        }
+
+        // Выбираем направление движения в зависимости от типа поведения
+        chooseMovementDirection(delta);
+    }
 
     /**
      * Стандартный конструктор для существующего кода
@@ -105,45 +200,39 @@ public class EnemyActor extends Actor {
     }
 
     /**
-     * Новый конструктор для совместимости с EnemyManager
-     * @param health здоровье
-     * @param damage урон
-     * @param speed скорость
-     * @param reward награда за убийство
-     * @param position начальная позиция
-     * @param target цель (игрок)
+     * Движение в направлении игрока
+     * @param delta время между кадрами
      */
-    public EnemyActor(int health, int damage, float speed, int reward, Vector2 position, PlayerActor target) {
-        // Используем базовую текстуру для противника
-        Texture tex = new Texture("Damaged_Ship_03.png");
-        texture = new TextureRegion(tex);
+    private void moveTowardsPlayer(float delta) {
+        // Проверяем, существует ли еще игрок
+        if (targetPlayer.getStage() == null) {
+            targetPlayer = null;
+            return;
+        }
 
-        // Настройка размеров и начального положения
-        setWidth(texture.getTexture().getWidth() * SCALE);
-        setHeight(texture.getTexture().getHeight() * SCALE);
-        setOriginX(getWidth() / 2);
-        setOriginY(getHeight() / 2);
+        // Рассчитываем вектор направления к игроку
+        float targetX = targetPlayer.getX() + targetPlayer.getWidth() / 2;
+        float targetY = targetPlayer.getY() + targetPlayer.getHeight() / 2;
+        float enemyX = getX() + getWidth() / 2;
+        float enemyY = getY() + getHeight() / 2;
 
-        // Установка позиции
-        setPosition(position.x, position.y);
+        // Расстояние до игрока
+        distanceToPlayer = Vector2.dst(enemyX, enemyY, targetX, targetY);
 
-        // Создание хитбокса
-        hitbox = HitboxHelper.createRectangleHitbox(getWidth(), getHeight(), getOriginX(), getOriginY());
-        hitbox.setOrigin(getOriginX(), getOriginY());
+        // Создаем вектор направления к игроку и нормализуем его
+        Vector2 direction = new Vector2(targetX - enemyX, targetY - enemyY).nor();
 
+        // Вычисляем угол поворота (в градусах)
+        float angle = Vector2Helpers.getRotationByVector(direction.x, direction.y);
+        setRotation(angle);
 
-        // Установка характеристик
-        this.maxHealth = health;
-        this.currentHealth = health;
-        this.collisionDamage = damage;
-        this.baseSpeed = speed;
-        this.currentSpeed = speed;
-        this.rewardExp = reward;
+        // Перемещение в сторону игрока
+        moveBy(direction.x * currentSpeed, direction.y * currentSpeed);
 
-        // Установка цели
-        this.targetPlayer = target;
-
-        LogHelper.log("EnemyActor", "Created new enemy with health: " + health);
+        // Проверка столкновения с игроком (для совместимости с Enemy)
+        if (distanceToPlayer < 32) {
+            targetPlayer.takeDamage(collisionDamage);
+        }
     }
     @Override
     public void draw(Batch batch, float parentAlpha) {
@@ -163,29 +252,27 @@ public class EnemyActor extends Actor {
         }
     }
 
-    @Override
-    public void act(float delta) {
-        super.act(delta);
+    /**
+     * Действия при смерти врага
+     */
+    public void die() {
+        // Устанавливаем флаг смерти
+        isDead = true;
 
-        if (isDead) return;
+        // Удаляем со сцены
+        remove();
 
-        // Обновление таймера неуязвимости
-        if (invulnerabilityTime > 0) {
-            invulnerabilityTime -= delta;
-        }
-
-        // Поиск игрока, если еще не найден
-        if (targetPlayer == null) {
-            findPlayer();
-        }
-
-        // Движение врага
+        // Даем опыт игроку, если он существует
         if (targetPlayer != null) {
-            moveTowardsPlayer(delta);
+            int calculatedExp = calculateExperienceReward();
+            targetPlayer.addExperience(calculatedExp);
+            LogHelper.log("EnemyActor", "Enemy died, calculated reward: " + calculatedExp);
         }
 
-        // Обновление хитбокса
-        updateHitbox();
+        // Уведомляем обработчик о смерти
+        if (deathHandler != null) {
+            deathHandler.onEnemyDeath(this);
+        }
     }
 
     /**
@@ -212,40 +299,12 @@ public class EnemyActor extends Actor {
     }
 
     /**
-     * Движение в направлении игрока
-     * @param delta время между кадрами
+     * Устанавливает обработчик смерти врага
+     *
+     * @param handler обработчик
      */
-    private void moveTowardsPlayer(float delta) {
-        // Проверяем, существует ли еще игрок
-        if (targetPlayer.getStage() == null) {
-            targetPlayer = null;
-            return;
-        }
-
-        // Рассчитываем вектор направления к игроку
-        float targetX = targetPlayer.getX() + targetPlayer.getWidth() / 2;
-        float targetY = targetPlayer.getY() + targetPlayer.getHeight() / 2;
-        float enemyX = getX() + getWidth() / 2;
-        float enemyY = getY() + getHeight() / 2;
-
-        // Расстояние до игрока
-        float distanceToPlayer = Vector2.dst(enemyX, enemyY, targetX, targetY);
-
-
-        // Создаем вектор направления к игроку и нормализуем его
-        Vector2 direction = new Vector2(targetX - enemyX, targetY - enemyY).nor();
-
-        // Вычисляем угол поворота (в градусах)
-        float angle = Vector2Helpers.getRotationByVector(direction.x, direction.y);
-        setRotation(angle);
-
-        // Перемещение в сторону игрока
-        moveBy(direction.x * currentSpeed, direction.y * currentSpeed);
-
-        // Проверка столкновения с игроком (для совместимости с Enemy)
-        if (distanceToPlayer < 32) {
-            targetPlayer.takeDamage(collisionDamage);
-        }
+    public void setDeathHandler(DeathHandler handler) {
+        this.deathHandler = handler;
     }
 
 
@@ -276,21 +335,16 @@ public class EnemyActor extends Actor {
     }
 
     /**
-     * Действия при смерти врага
+     * Устанавливает тип поведения ИИ
+     *
+     * @param type тип поведения
      */
-    public void die() {
-        // Устанавливаем флаг смерти
-        isDead = true;
+    public void setBehaviorType(BehaviorType type) {
+        this.behaviorType = type;
+        this.behaviorTimer = 0;
 
-        // Удаляем со сцены
-        remove();
-
-        // Даем опыт игроку, если он существует
-        if (targetPlayer != null) {
-            int calculatedExp = calculateExperienceReward();
-            targetPlayer.addExperience(calculatedExp);
-            LogHelper.log("EnemyActor", "Enemy died, calculated reward: " + calculatedExp);
-        }
+        // Генерируем длительность поведения
+        this.behaviorDuration = MathUtils.random(2.0f, 5.0f);
     }
 
     /**
@@ -413,5 +467,124 @@ public class EnemyActor extends Actor {
      */
     public float getCurrentSpeed() {
         return currentSpeed;
+    }
+
+    /**
+     * Включает специальную атаку для врага (если доступна)
+     *
+     * @param hasAttack наличие специальной атаки
+     */
+    public void setHasSpecialAttack(boolean hasAttack) {
+        this.hasSpecialAttack = hasAttack;
+        this.specialAttackCooldown = MathUtils.random(3.0f, 8.0f);
+    }
+
+    /**
+     * Обновляет поведение врага, случайно меняя тип
+     */
+    private void updateBehavior() {
+        behaviorTimer = 0;
+        behaviorDuration = MathUtils.random(3.0f, 6.0f);
+
+        // Генерируем случайное поведение, с большим весом для прямого преследования
+        float roll = MathUtils.random();
+
+        if (currentHealth < maxHealth * 0.3f && roll < 0.4f) {
+            // При малом здоровье повышаем шанс отступления
+            behaviorType = BehaviorType.RETREAT;
+        } else if (roll < 0.6f) {
+            behaviorType = BehaviorType.DIRECT;
+        } else if (roll < 0.8f) {
+            behaviorType = BehaviorType.FLANKING;
+        } else {
+            behaviorType = BehaviorType.AMBUSH;
+        }
+    }
+
+    /**
+     * Выбирает направление движения в зависимости от типа поведения
+     */
+    private void chooseMovementDirection(float delta) {
+        Vector2 playerPosition = new Vector2(
+            targetPlayer.getX() + targetPlayer.getWidth() / 2,
+            targetPlayer.getY() + targetPlayer.getHeight() / 2
+        );
+
+        Vector2 myPosition = new Vector2(
+            getX() + getWidth() / 2,
+            getY() + getHeight() / 2
+        );
+
+        Vector2 direction = new Vector2();
+
+        switch (behaviorType) {
+            case DIRECT:
+                // Прямое преследование игрока
+                direction.set(playerPosition).sub(myPosition).nor();
+                break;
+
+            case FLANKING:
+                // Пытаемся зайти сбоку от игрока
+                direction.set(playerPosition).sub(myPosition);
+                float length = direction.len();
+                direction.nor();
+
+                // Поворачиваем вектор на 45-90 градусов
+                float angle = MathUtils.random(45, 90);
+                if (MathUtils.randomBoolean()) angle = -angle;
+                direction.rotate(angle);
+
+                // Если враг достаточно близко к игроку, атакуем напрямую
+                if (length < 100) {
+                    direction.set(playerPosition).sub(myPosition).nor();
+                }
+                break;
+
+            case AMBUSH:
+                // Если враг далеко от игрока, то ждем на месте
+                if (distanceToPlayer > 300) {
+                    direction.set(0, 0);
+                } else {
+                    // Если игрок приблизился, начинаем преследование
+                    direction.set(playerPosition).sub(myPosition).nor();
+                    behaviorType = BehaviorType.DIRECT;
+                }
+                break;
+
+            case RETREAT:
+                // Отступаем от игрока
+                direction.set(myPosition).sub(playerPosition).nor();
+
+                // Если враг достаточно далеко, меняем поведение
+                if (distanceToPlayer > 400) {
+                    updateBehavior();
+                }
+                break;
+        }
+
+        // Применяем выбранное направление
+        randomDirection.set(direction);
+    }
+
+    /**
+     * Выполняет специальную атаку врага
+     */
+    private void performSpecialAttack() {
+        // Здесь можно реализовать различные специальные атаки
+        // Например, выстрел снарядом или временное ускорение
+        LogHelper.log("EnemyActor", "Enemy performed special attack");
+    }
+
+    // Типы поведения ИИ врагов
+    public enum BehaviorType {
+        DIRECT,     // Прямое преследование игрока
+        FLANKING,   // Попытка зайти сбоку
+        AMBUSH,     // Подготовка засады
+        RETREAT     // Отступление при малом здоровье
+    }
+
+    // Интерфейс для обработки смерти врага
+    public interface DeathHandler {
+        void onEnemyDeath(EnemyActor enemy);
     }
 }
