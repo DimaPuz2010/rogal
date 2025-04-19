@@ -455,8 +455,37 @@ public class EnemyManager implements Disposable {
         // Генерируем случайную позицию появления
         Vector2 spawnPosition = generateSpawnPosition();
 
+        // Выбираем текстуру в зависимости от типа врага
+        String texturePath;
+        switch (enemyType) {
+            case FAST:
+                texturePath = "Ship_02.png"; // Быстрый, но слабый враг
+                break;
+            case TANK:
+                texturePath = "Ship_05.png"; // Медленный, но с высоким здоровьем враг
+                break;
+            case ELITE:
+                texturePath = "Ship_01.png"; // Элитный враг с повышенными характеристиками
+                break;
+            default:
+                texturePath = "Damaged_Ship_03.png"; // Обычный враг
+                break;
+        }
+
         // Создаем врага с определенными характеристиками
-        EnemyActor enemy = new EnemyActor(health, damage, speed, reward, spawnPosition, player);
+        EnemyActor enemy = new EnemyActor(texturePath);
+
+        // Настраиваем характеристики
+        enemy.setHealth(health);
+        enemy.setCollisionDamage(damage);
+        enemy.setSpeed(speed);
+        enemy.setReward(reward);
+        enemy.setPosition(spawnPosition.x, spawnPosition.y);
+
+        // Устанавливаем цель (игрок)
+        if (player != null) {
+            enemy.setTarget(player);
+        }
 
         // Устанавливаем обработчик смерти
         enemy.setDeathHandler(new EnemyActor.DeathHandler() {
@@ -468,7 +497,7 @@ public class EnemyManager implements Disposable {
 
         // Логируем информацию о созданном враге
         LogHelper.log("EnemyManager", "Created " + enemyType + " enemy: HP=" + health +
-                     ", DMG=" + damage + ", SPD=" + speed + ", REW=" + reward);
+            ", DMG=" + damage + ", SPD=" + speed + ", REW=" + reward + ", Texture: " + texturePath);
 
         return enemy;
     }

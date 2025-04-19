@@ -125,7 +125,7 @@ public class EnemyActor extends Actor {
             specialAttackCooldown -= delta;
 
             // Если кулдаун истек и игрок в зоне поражения, используем специальную атаку
-            if (specialAttackCooldown <= 0 && distanceToPlayer < 200) {
+            if (specialAttackCooldown <= 0 && targetPlayer != null && distanceToPlayer < 200) {
                 performSpecialAttack();
                 specialAttackCooldown = MathUtils.random(5.0f, 10.0f);
             }
@@ -204,6 +204,11 @@ public class EnemyActor extends Actor {
      * @param delta время между кадрами
      */
     private void moveTowardsPlayer(float delta) {
+        // Проверяем, существует ли игрок
+        if (targetPlayer == null) {
+            return;
+        }
+
         // Проверяем, существует ли еще игрок
         if (targetPlayer.getStage() == null) {
             targetPlayer = null;
@@ -505,6 +510,15 @@ public class EnemyActor extends Actor {
      * Выбирает направление движения в зависимости от типа поведения
      */
     private void chooseMovementDirection(float delta) {
+        // Проверка на null, чтобы избежать NullPointerException
+        if (targetPlayer == null) {
+            // Если игрок не найден, делаем случайные движения
+            if (MathUtils.randomBoolean(0.05f)) {
+                randomDirection.set(MathUtils.random(-1f, 1f), MathUtils.random(-1f, 1f)).nor();
+            }
+            return;
+        }
+
         Vector2 playerPosition = new Vector2(
             targetPlayer.getX() + targetPlayer.getWidth() / 2,
             targetPlayer.getY() + targetPlayer.getHeight() / 2
@@ -573,6 +587,15 @@ public class EnemyActor extends Actor {
         // Здесь можно реализовать различные специальные атаки
         // Например, выстрел снарядом или временное ускорение
         LogHelper.log("EnemyActor", "Enemy performed special attack");
+    }
+
+    /**
+     * Устанавливает цель для врага
+     *
+     * @param target игрок, на которого будет направлен враг
+     */
+    public void setTarget(PlayerActor target) {
+        this.targetPlayer = target;
     }
 
     // Типы поведения ИИ врагов

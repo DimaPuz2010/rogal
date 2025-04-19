@@ -1,6 +1,9 @@
 .gitkeep
 BG.png
 Damaged_Ship_03.png
+Ship_01.png
+Ship_02.png
+Ship_05.png
 Ship_LVL_1.png
 abilities/blade_icon.png
 abilities/fireball.png
