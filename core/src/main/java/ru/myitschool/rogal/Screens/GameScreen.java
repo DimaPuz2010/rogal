@@ -407,7 +407,6 @@ public class GameScreen implements Screen {
 
         // Переходим на экран окончания игры
         game.setScreen(new GameOverScreen(game, enemyManager.getCurrentWave(), enemiesKilled, currencyReward));
-        dispose();
     }
 
     /**
@@ -426,7 +425,6 @@ public class GameScreen implements Screen {
                 @Override
                 public void run() {
                     game.setScreen(gameOverScreen);
-                    dispose();
                 }
             });
         }

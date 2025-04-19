@@ -21,16 +21,16 @@ public class FontManager {
      */
     public static void initialize() {
         // Создаем шрифт для заголовков
-        titleFont = generateFont("fonts/NeuePixelSans.ttf", 48, Color.WHITE);
+        titleFont = generateFont("assets/fonts/NeuePixelSans.ttf", 48, Color.WHITE);
 
         // Создаем шрифт для кнопок
-        buttonFont = generateFont("fonts/NeuePixelSans.ttf", 32, Color.WHITE);
+        buttonFont = generateFont("assets/fonts/NeuePixelSans.ttf", 32, Color.WHITE);
 
         // Создаем шрифт для обычного текста
-        regularFont = generateFont("fonts/NeuePixelSans.ttf", 20, Color.WHITE);
+        regularFont = generateFont("assets/fonts/NeuePixelSans.ttf", 20, Color.WHITE);
 
         // Создаем малый шрифт для таблиц
-        smallFont = generateFont("fonts/NeuePixelSans.ttf", 16, Color.WHITE);
+        smallFont = generateFont("assets/fonts/NeuePixelSans.ttf", 16, Color.WHITE);
     }
 
     /**
