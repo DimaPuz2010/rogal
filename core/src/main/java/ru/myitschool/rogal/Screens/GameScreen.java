@@ -124,7 +124,6 @@ public class GameScreen implements Screen {
 
                 @Override
                 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                    // Обрабатываем касание только если не выбор способности и UI не обработал его
                     // Проверяем, активен ли выбор способности
                     if (isAbilitySelectionPaused) {
                         return false;
@@ -262,7 +261,7 @@ public class GameScreen implements Screen {
             }
         }
 
-        // Отрисовка игровой сцены
+        // Отрисовка сцены
         gameStage.draw();
 
         // Отрисовка маркера целевой точки для режима управления касанием

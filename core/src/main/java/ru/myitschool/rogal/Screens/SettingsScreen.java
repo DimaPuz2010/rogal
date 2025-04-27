@@ -148,7 +148,7 @@ public class SettingsScreen implements Screen {
         Label controlModeLabel = new Label("Режим управления:", labelStyle);
 
         // Создаем чекбокс для режима управления
-        final CheckBox touchControlCheckbox = new CheckBox("Управление касанием", skin);
+        final CheckBox touchControlCheckbox = new CheckBox(" Управление касанием", skin);
         touchControlCheckbox.getLabel().setStyle(labelStyle);
         // Устанавливаем текущее значение из настроек
         touchControlCheckbox.setChecked(PlayerData.getControlMode() == 1);
@@ -157,6 +157,11 @@ public class SettingsScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 boolean isTouchControl = touchControlCheckbox.isChecked();
                 PlayerData.setControlMode(isTouchControl ? 1 : 0);
+                if (isTouchControl) {
+                    touchControlCheckbox.setText(" Управление касанием");
+                } else {
+                    touchControlCheckbox.setText(" Управление джостиком");
+                }
 
                 // Если настройки вызваны из игры, обновляем режим управления в реальном времени
                 if (gameScreen != null && gameScreen.getPlayer() != null) {
@@ -196,7 +201,7 @@ public class SettingsScreen implements Screen {
         // Добавляем настройку размера интерфейса
         Label uiScaleLabel = new Label("Размер интерфейса:", labelStyle);
 
-        // Слайдер для настройки размера UI (от 50% до 150%, вместо прежних 80-150%)
+        // Слайдер для настройки размера UI (от 50% до 150%)
         final Slider uiScaleSlider = new Slider(0.5f, 1.5f, 0.1f, false, skin);
         uiScaleSlider.setValue(uiScale);
 

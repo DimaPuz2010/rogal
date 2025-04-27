@@ -636,7 +636,7 @@ public class GameUI implements Disposable {
                 }
             });
 
-            choicesTable.add(abilityTable).pad(10);
+            choicesTable.add(abilityTable).pad(10).top();
         }
 
         // Добавляем таблицу с выбором в окно
@@ -698,8 +698,8 @@ public class GameUI implements Disposable {
         iconStack.add(slotBg);
 
         // Отладочная информация
-        System.out.println("Создание слота для способности: " + ability.getName());
-        System.out.println("Иконка способности: " + (ability.getIcon() != null ? "есть" : "отсутствует"));
+        LogHelper.log(this.getClass().toString(), "Создание слота для способности: " + ability.getName());
+        LogHelper.log(this.getClass().toString(), "Иконка способности: " + (ability.getIcon() != null ? "есть" : "отсутствует"));
 
         if (ability.getIcon() != null) {
             try {
@@ -707,9 +707,9 @@ public class GameUI implements Disposable {
                 Image abilityIcon = new Image(iconDrawable);
                 abilityIcon.setFillParent(true);
                 iconStack.add(abilityIcon);
-                System.out.println("Иконка успешно добавлена");
+                LogHelper.log(this.getClass().toString(), "Иконка успешно добавлена");
             } catch (Exception e) {
-                System.out.println("Ошибка при загрузке иконки: " + e.getMessage());
+                LogHelper.log(this.getClass().toString(), "Ошибка при загрузке иконки: " + e.getMessage());
                 // Добавляем заглушку для иконки
                 Image placeholderIcon = new Image(skillSlot);
                 placeholderIcon.setColor(0.5f, 0.5f, 0.5f, 1f);

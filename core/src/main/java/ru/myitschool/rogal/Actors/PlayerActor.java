@@ -23,6 +23,7 @@ import ru.myitschool.rogal.Abilities.Abilitis.FrostAuraAbility;
 import ru.myitschool.rogal.Abilities.Abilitis.HealingAuraAbility;
 import ru.myitschool.rogal.Abilities.Abilitis.LightningChainAbility;
 import ru.myitschool.rogal.Abilities.Abilitis.OrbitingBladeAbility;
+import ru.myitschool.rogal.Abilities.Abilitis.Relsatron;
 import ru.myitschool.rogal.Abilities.Ability;
 import ru.myitschool.rogal.Abilities.AbilityManager;
 import ru.myitschool.rogal.CustomHelpers.Helpers.HitboxHelper;
@@ -109,6 +110,11 @@ public class PlayerActor extends Actor {
     // Обработчик смерти
     private DeathHandler deathHandler;
 
+    /**
+     * Типы дебаффов
+     */
+
+
     public PlayerActor(final String texturePath, final Touchpad touchpad) {
         Texture tex = new Texture(texturePath);
         this.texture = new TextureRegion(tex);
@@ -129,7 +135,8 @@ public class PlayerActor extends Actor {
         hitbox.setOrigin(getOriginX(), getOriginY());
 
         // Применяем улучшения из сохраненных данных
-        applyPlayerUpgrades();
+        PlayerData.applyUpgradesToPlayer(this);
+
 
         abilityManager = new AbilityManager(this);
         initAvailableAbilities();
@@ -142,82 +149,18 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Класс для хранения информации о дебаффе игрока
+     * Инициализирует список доступных конструкторов способностей
      */
-    public class PlayerDebuff {
-        private final String id;
-        private final String name;
-        private final float duration;
-        private float remainingTime;
-        private final int effectValue;
-        private final DebuffType type;
-
-        public PlayerDebuff(String id, String name, float duration, int effectValue, DebuffType type) {
-            this.id = id;
-            this.name = name;
-            this.duration = duration;
-            this.remainingTime = duration;
-            this.effectValue = effectValue;
-            this.type = type;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public float getDuration() {
-            return duration;
-        }
-
-        public float getRemainingTime() {
-            return remainingTime;
-        }
-
-        public void setRemainingTime(float time) {
-            this.remainingTime = Math.max(0, time);
-        }
-
-        public int getEffectValue() {
-            return effectValue;
-        }
-
-        public DebuffType getType() {
-            return type;
-        }
-
-        /**
-         * Обновляет дебафф
-         * @param delta время между кадрами
-         * @return true если дебафф все еще активен
-         */
-        public boolean update(float delta) {
-            remainingTime -= delta;
-            return remainingTime > 0;
-        }
+    private void initAvailableAbilities() {
+        availableAbilities.add(EnergyBullet::new);
+        availableAbilities.add(HealingAuraAbility::new);
+        availableAbilities.add(OrbitingBladeAbility::new);
+        availableAbilities.add(LightningChainAbility::new);
+        availableAbilities.add(FrostAuraAbility::new);
+        availableAbilities.add(Relsatron::new);
     }
 
-    /**
-     * Типы дебаффов
-     */
-    public enum DebuffType {
-        SLOW,           // Замедление
-        DAMAGE_OVER_TIME, // Урон со временем
-        ARMOR_REDUCTION,  // Снижение защиты
-        ATTACK_REDUCTION, // Снижение атаки
-        STUN,             // Оглушение
-        CONFUSION         // Спутанность (обратное управление)
-    }
 
-    /**
-     * Применяет улучшения из сохраненных данных игрока
-     */
-    private void applyPlayerUpgrades() {
-        PlayerData.applyUpgradesToPlayer(this);
-    }
 
     @Override
     public void act(final float delta) {
@@ -333,14 +276,33 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Инициализирует список доступных конструкторов способностей
+     * Добавляет дебафф игроку
+     * @param id уникальный идентификатор дебаффа
+     * @param name название дебаффа
+     * @param duration длительность дебаффа в секундах
+     * @param effectValue значение эффекта дебаффа
+     * @param type тип дебаффа
+     * @return true если дебафф успешно добавлен
      */
-    private void initAvailableAbilities() {
-        availableAbilities.add(EnergyBullet::new);
-        availableAbilities.add(HealingAuraAbility::new);
-        availableAbilities.add(OrbitingBladeAbility::new);
-        availableAbilities.add(LightningChainAbility::new);
-        availableAbilities.add(FrostAuraAbility::new);
+    public boolean addDebuff(String id, String name, float duration, int effectValue, PlayerData.DebuffType type) {
+        // Если такой дебафф уже есть, обновляем его длительность
+        if (activeDebuffs.containsKey(id)) {
+            PlayerDebuff existingDebuff = activeDebuffs.get(id);
+            float newDuration = Math.max(existingDebuff.getRemainingTime(), duration);
+            existingDebuff.setRemainingTime(newDuration);
+            LogHelper.log("PlayerActor", "Updated debuff " + name + " duration to " + newDuration);
+            return true;
+        }
+
+        // Создаем новый дебафф
+        PlayerDebuff debuff = new PlayerDebuff(id, name, duration, effectValue, type);
+        activeDebuffs.put(id, debuff);
+        LogHelper.log("PlayerActor", "Added debuff " + name + " with duration " + duration);
+
+        // Применяем немедленный эффект дебаффа
+        applyDebuffEffect(debuff, true);
+
+        return true;
     }
 
     /**
@@ -378,7 +340,6 @@ public class PlayerActor extends Actor {
                 if (gameUI != null) {
                     gameUI.showAbilityUnlockMessage(ability.getName());
                     LogHelper.log("PlayerActor", "Выбрана начальная способность: " + ability.getName());
-                    // Обновляем UI после добавления способности
                     gameUI.updateAbilities();
                 }
             });
@@ -403,7 +364,6 @@ public class PlayerActor extends Actor {
 
     @Override
     public void draw(final Batch batch, final float parentAlpha) {
-        //texture = anim.getKeyFrame(stateTime);
         batch.draw(
             texture,
             getX(),
@@ -1043,33 +1003,62 @@ public class PlayerActor extends Actor {
     }
 
     /**
-     * Добавляет дебафф игроку
-     * @param id уникальный идентификатор дебаффа
-     * @param name название дебаффа
-     * @param duration длительность дебаффа в секундах
-     * @param effectValue значение эффекта дебаффа
-     * @param type тип дебаффа
-     * @return true если дебафф успешно добавлен
+     * Класс для хранения информации о дебаффе игрока
      */
-    public boolean addDebuff(String id, String name, float duration, int effectValue, DebuffType type) {
-        // Если такой дебафф уже есть, обновляем его длительность
-        if (activeDebuffs.containsKey(id)) {
-            PlayerDebuff existingDebuff = activeDebuffs.get(id);
-            float newDuration = Math.max(existingDebuff.getRemainingTime(), duration);
-            existingDebuff.setRemainingTime(newDuration);
-            LogHelper.log("PlayerActor", "Updated debuff " + name + " duration to " + newDuration);
-            return true;
+    public class PlayerDebuff {
+        private final String id;
+        private final String name;
+        private final float duration;
+        private float remainingTime;
+        private final int effectValue;
+        private final PlayerData.DebuffType type;
+
+        public PlayerDebuff(String id, String name, float duration, int effectValue, PlayerData.DebuffType type) {
+            this.id = id;
+            this.name = name;
+            this.duration = duration;
+            this.remainingTime = duration;
+            this.effectValue = effectValue;
+            this.type = type;
         }
 
-        // Создаем новый дебафф
-        PlayerDebuff debuff = new PlayerDebuff(id, name, duration, effectValue, type);
-        activeDebuffs.put(id, debuff);
-        LogHelper.log("PlayerActor", "Added debuff " + name + " with duration " + duration);
+        public String getId() {
+            return id;
+        }
 
-        // Применяем немедленный эффект дебаффа
-        applyDebuffEffect(debuff, true);
+        public String getName() {
+            return name;
+        }
 
-        return true;
+        public float getDuration() {
+            return duration;
+        }
+
+        public float getRemainingTime() {
+            return remainingTime;
+        }
+
+        public void setRemainingTime(float time) {
+            this.remainingTime = Math.max(0, time);
+        }
+
+        public int getEffectValue() {
+            return effectValue;
+        }
+
+        public PlayerData.DebuffType getType() {
+            return type;
+        }
+
+        /**
+         * Обновляет дебафф
+         * @param delta время между кадрами
+         * @return true если дебафф все еще активен
+         */
+        public boolean update(float delta) {
+            remainingTime -= delta;
+            return remainingTime > 0;
+        }
     }
 
     /**

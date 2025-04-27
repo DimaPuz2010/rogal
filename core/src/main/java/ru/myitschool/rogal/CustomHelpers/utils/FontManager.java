@@ -20,17 +20,18 @@ public class FontManager {
      * Инициализирует все шрифты для игры
      */
     public static void initialize() {
+        String path = "fonts/NeuePixelSans.ttf";
         // Создаем шрифт для заголовков
-        titleFont = generateFont("assets/fonts/NeuePixelSans.ttf", 48, Color.WHITE);
+        titleFont = generateFont(path, 48, Color.WHITE);
 
         // Создаем шрифт для кнопок
-        buttonFont = generateFont("assets/fonts/NeuePixelSans.ttf", 32, Color.WHITE);
+        buttonFont = generateFont(path, 32, Color.WHITE);
 
         // Создаем шрифт для обычного текста
-        regularFont = generateFont("assets/fonts/NeuePixelSans.ttf", 20, Color.WHITE);
+        regularFont = generateFont(path, 20, Color.WHITE);
 
         // Создаем малый шрифт для таблиц
-        smallFont = generateFont("assets/fonts/NeuePixelSans.ttf", 16, Color.WHITE);
+        smallFont = generateFont(path, 16, Color.WHITE);
     }
 
     /**

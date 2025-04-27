@@ -3,6 +3,7 @@ package ru.myitschool.rogal.Abilities;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+
 import ru.myitschool.rogal.Actors.PlayerActor;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 
@@ -32,17 +33,7 @@ public class AbilityManager implements Disposable {
         this.abilities = new Array<>(MAX_ABILITIES);
         this.activeAbilities = new Array<>();
 
-        // Инициализируем базовые способности
-        initDefaultAbilities();
-        
         LogHelper.log("AbilityManager", "Ability manager created for player");
-    }
-
-    /**
-     * Добавляет стандартные способности, доступные игроку с начала игры
-     */
-    private void initDefaultAbilities() {
-        // Базовые способности будут добавлены через PlayerActor.addTestAbilities() и unlockInitialAbility()
     }
 
     /**
@@ -63,7 +54,6 @@ public class AbilityManager implements Disposable {
         abilities.add(ability);
         LogHelper.log("AbilityManager", "Added ability: " + ability.getName() + " (Level " + ability.getLevel() + ")");
         return true;
-        
     }
 
     /**
@@ -97,14 +87,14 @@ public class AbilityManager implements Disposable {
     public void update(float delta) {
         // Создаем копию списка способностей для безопасной итерации
         Array<Ability> abilitiesCopy = new Array<>(abilities);
-        
+
         // Обновляем каждую способность
         for (Ability ability : abilitiesCopy) {
             if (ability != null) {
                 ability.update(delta);
             }
         }
-        
+
         // Создаем новый список активных способностей
         Array<Ability> newActiveAbilities = new Array<>();
         for (Ability ability : abilitiesCopy) {
@@ -112,7 +102,7 @@ public class AbilityManager implements Disposable {
                 newActiveAbilities.add(ability);
             }
         }
-        
+
         // Обновляем список активных способностей
         activeAbilities.clear();
         activeAbilities.addAll(newActiveAbilities);
@@ -227,14 +217,14 @@ public class AbilityManager implements Disposable {
      */
     public boolean hasEnoughEnergyForAutoUse() {
         if (owner == null) return false;
-        
+
         float totalEnergyCost = 0;
         for (Ability ability : abilities) {
             if (ability != null && ability.isAutoUse() && ability.canActivate()) {
                 totalEnergyCost += ability.getEnergyCost();
             }
         }
-        
+
         return owner.getCurrentEnergy() >= totalEnergyCost;
     }
 

@@ -20,15 +20,15 @@ import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 
 public class EnergyBullet extends Ability {
     // Параметры снаряда
-    private float projectileSpeed = 5.5f;
+    private final float projectileSpeed = 5.5f;
     private float projectileDamage = 15f;
-    private float projectileLifespan = 5f;
-    private float projectileSize = 0.05f;
-    private String projectileTexturePath = "abilities/fireball.png";
-    private float autoActivateInterval = 0.4f;
+    private final float projectileLifespan = 5f;
+    private final float projectileSize = 0.05f;
+    private final String projectileTexturePath = "abilities/fireball.png";
+    private final float autoActivateInterval = 0.4f;
     private float timeSinceLastActivation = 0f;
     private int projectileCount = 1; // Количество пуль
-    private float projectileSpreadAngle = 15f; // Угол разброса между пулями в градусах
+    private final float projectileSpreadAngle = 15f; // Угол разброса между пулями в градусах
 
     public EnergyBullet() {
         super("Energy Bullet", "Creates an energy projectile that automatically flies towards an enemy and deals damage\n" +
@@ -89,8 +89,6 @@ public class EnergyBullet extends Ability {
 
                 // Рассчитываем угол смещения для каждой пули
                 if (projectileCount > 1) {
-                    // Для 2 пуль: -spreadAngle/2, +spreadAngle/2
-                    // Для 3 пуль: -spreadAngle, 0, +spreadAngle
                     if (projectileCount == 2) {
                         angleOffset = (i == 0) ? -projectileSpreadAngle/2 : projectileSpreadAngle/2;
                     } else {
@@ -136,14 +134,17 @@ public class EnergyBullet extends Ability {
     protected void onLevelUp() {
         cooldown = Math.max(0.8f, cooldown - 0.3f);
         range += 20f;
-        projectileDamage += 5f;
+        projectileDamage += 2.5f;
+        projectileCount += 1;
 
         // Увеличиваем количество пуль на определенных уровнях
         if (level == 3) {
-            projectileCount = 2;
+            projectileCount += 2;
+            projectileDamage += 5;
             LogHelper.log("EnergyBullet", "Level 3 upgrade: Now fires 2 projectiles!");
         } else if (level == 5) {
-            projectileCount = 3;
+            projectileCount += 2;
+            projectileDamage += 10;
             LogHelper.log("EnergyBullet", "Level 5 upgrade: Now fires 3 projectiles!");
         }
     }
@@ -237,7 +238,7 @@ public class EnergyBullet extends Ability {
      * Внутренний класс для снаряда
      */
     private class BulletProjectile extends Actor {
-        private Vector2 direction;
+        private final Vector2 direction;
         private final float speed;
         private final float damage;
         private final float maxLifespan;
