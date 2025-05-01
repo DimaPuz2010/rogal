@@ -289,22 +289,58 @@ public class UISkinHelper {
         skin.add("default-horizontal", sliderStyle);
     }
 
+    /**
+     * Создает стиль для окна
+     *
+     * @param skin скин для добавления стиля
+     */
     private static void createWindowStyle(Skin skin) {
         Window.WindowStyle windowStyle = new Window.WindowStyle();
-        windowStyle.titleFont = skin.getFont("default");
         windowStyle.background = new TextureRegionDrawable(new TextureRegion(skin.get("window-bg", Texture.class)));
+        windowStyle.titleFont = skin.getFont("default");
         windowStyle.titleFontColor = Color.WHITE;
+
+        // Увеличиваем отступы для содержимого окна
+        windowStyle.background.setLeftWidth(15);
+        windowStyle.background.setRightWidth(15);
+        windowStyle.background.setTopHeight(15);
+        windowStyle.background.setBottomHeight(15);
         skin.add("default", windowStyle);
     }
 
+    /**
+     * Создает стиль для текстовой кнопки
+     * @param skin скин для добавления стиля
+     */
     private static void createTextButtonStyle(Skin skin) {
-        TextButton.TextButtonStyle buttonStyle = new TextButton.TextButtonStyle();
-        buttonStyle.font = skin.getFont("default");
-        buttonStyle.fontColor = Color.WHITE;
-        buttonStyle.up = new TextureRegionDrawable(new TextureRegion(skin.get("button-up", Texture.class)));
-        buttonStyle.down = new TextureRegionDrawable(new TextureRegion(skin.get("button-down", Texture.class)));
-        buttonStyle.over = new TextureRegionDrawable(new TextureRegion(skin.get("button-over", Texture.class)));
-        skin.add("default", buttonStyle);
+        TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
+        textButtonStyle.up = new TextureRegionDrawable(new TextureRegion(skin.get("button-up", Texture.class)));
+        textButtonStyle.down = new TextureRegionDrawable(new TextureRegion(skin.get("button-down", Texture.class)));
+        textButtonStyle.over = new TextureRegionDrawable(new TextureRegion(skin.get("button-over", Texture.class)));
+        textButtonStyle.font = skin.getFont("default");
+        textButtonStyle.fontColor = Color.WHITE;
+
+        // Увеличиваем отступы для текста на кнопках
+        textButtonStyle.up.setLeftWidth(10);
+        textButtonStyle.up.setRightWidth(10);
+        textButtonStyle.up.setTopHeight(5);
+        textButtonStyle.up.setBottomHeight(5);
+
+        textButtonStyle.down.setLeftWidth(10);
+        textButtonStyle.down.setRightWidth(10);
+        textButtonStyle.down.setTopHeight(5);
+        textButtonStyle.down.setBottomHeight(5);
+
+        textButtonStyle.over.setLeftWidth(10);
+        textButtonStyle.over.setRightWidth(10);
+        textButtonStyle.over.setTopHeight(5);
+        textButtonStyle.over.setBottomHeight(5);
+
+        // Слегка уменьшаем шрифт для кнопок, чтобы текст лучше помещался
+        textButtonStyle.font.getData().markupEnabled = true;
+        textButtonStyle.font.getData().setScale(0.85f);
+
+        skin.add("default", textButtonStyle);
     }
 
     private static void createLabelStyle(Skin skin) {

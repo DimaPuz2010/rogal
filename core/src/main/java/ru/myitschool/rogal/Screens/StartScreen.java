@@ -4,18 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -143,51 +139,19 @@ public class StartScreen implements Screen {
         // Создаем кнопку "Обновления" с уменьшенным размером
         TextButton updateButton = ButtonCreator.createButton("ОБНОВЛЕНИЯ", FontManager.getSmallFont());
 
-        // Добавляем иконку обновления (условно создаем круглую иконку)
-        refreshIconTexture = createRefreshIcon();
-        Image refreshIcon = new Image(new TextureRegionDrawable(new TextureRegion(refreshIconTexture)));
 
         updateButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Показываем диалог обновлений
                 showUpdateDialog();
             }
         });
 
-        // Добавляем иконку и кнопку в таблицу
-        updateTable.add(refreshIcon).size(24, 24).padRight(5);
-        updateTable.add(updateButton).width(120).height(40);
+        updateTable.add(updateButton).width(120).height(40).padLeft(200).padBottom(20);
 
         stage.addActor(updateTable);
 
         LogHelper.log("StartScreen", "UI created");
-    }
-
-    /**
-     * Создает текстуру с иконкой обновления
-     */
-    private Texture createRefreshIcon() {
-        // Создаем простую иконку обновления круглой формы со стрелкой
-        Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
-
-        // Фон иконки
-        pixmap.setColor(0.3f, 0.7f, 1f, 1f);
-        pixmap.fillCircle(16, 16, 14);
-
-        // Обводка
-        pixmap.setColor(Color.WHITE);
-        pixmap.drawCircle(16, 16, 14);
-
-        // Рисуем стрелку обновления
-        pixmap.setColor(Color.WHITE);
-        pixmap.fillTriangle(16, 8, 22, 14, 10, 14);
-        pixmap.fillRectangle(15, 13, 2, 10);
-
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-
-        return texture;
     }
 
     /**

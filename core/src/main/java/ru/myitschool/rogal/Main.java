@@ -18,7 +18,7 @@ public class Main extends Game {
     public static final int SCREEN_HEIGHT = 720;
 
     // Версия приложения, загружаемая из gradle.properties
-    public static String VERSION = "1.0.5";
+    public static String VERSION = "1.0.6";
 
     // Сохраняем экземпляр для доступа из других классов
     private static Main instance;
