@@ -64,9 +64,13 @@ public class GameUI implements Disposable {
     private Label expLabel;
     private Label difficultyLabel;
     private TextButton autoUseButton;
+    private TextButton pauseButton; // Кнопка паузы
 
     // Контейнер для масштабирования
     private Table uiContainer;
+
+    // Элементы меню паузы
+    private Window pauseWindow;
 
     // Добавляем новые поля для хранения UI элементов способностей
     private Array<Stack> abilitySlots; // Стеки для отображения способностей
@@ -85,6 +89,9 @@ public class GameUI implements Disposable {
     private final TextureRegion targetMarker;
     private boolean showTargetMarker = false;
     private final Vector2 targetPosition = new Vector2();
+
+    // Приватное поле для фона кнопки паузы
+    private Table pauseButtonBackground;
 
     public GameUI(Stage stage, PlayerActor player) {
         this.stage = stage;
@@ -107,6 +114,9 @@ public class GameUI implements Disposable {
 
         // Добавляем интерфейс таймера волны
         createWaveTimerUI();
+
+        // Добавляем кнопку паузы
+        createPauseButton();
 
         // Загружаем текстуру для маркера целевой точки
         targetMarker = new TextureRegion(new Texture("target-marker.png"));
@@ -431,9 +441,8 @@ public class GameUI implements Disposable {
             Stack slot = abilitySlots.get(slotIndex);
             for (Actor actor : slot.getChildren()) {
                 if (actor instanceof Label) {
-                    Label label = (Label) actor;
-                    if (label.getText().toString().equals("A")) {
-                        label.setVisible(newAutoStatus);
+                    if (((Label) actor).getText().toString().equals("A")) {
+                        actor.setVisible(newAutoStatus);
                     }
                 }
             }
@@ -508,9 +517,8 @@ public class GameUI implements Disposable {
                 // Обновляем индикатор автоиспользования
                 for (Actor actor : slot.getChildren()) {
                     if (actor instanceof Label) {
-                        Label label = (Label) actor;
-                        if (label.getText().toString().equals("A")) {
-                            label.setVisible(ability.isAutoUse());
+                        if (((Label) actor).getText().toString().equals("A")) {
+                            actor.setVisible(ability.isAutoUse());
                         }
                     }
                 }
@@ -524,9 +532,8 @@ public class GameUI implements Disposable {
                 // Скрываем индикатор автоиспользования
                 for (Actor actor : slot.getChildren()) {
                     if (actor instanceof Label) {
-                        Label label = (Label) actor;
-                        if (label.getText().toString().equals("A")) {
-                            label.setVisible(false);
+                        if (((Label) actor).getText().toString().equals("A")) {
+                            actor.setVisible(false);
                         }
                     }
                 }
@@ -1045,8 +1052,7 @@ public class GameUI implements Disposable {
         // Получаем ссылку на Game
         Main game = (Main) Gdx.app.getApplicationListener();
         if (game != null && game.getScreen() instanceof GameScreen) {
-            GameScreen gameScreen = (GameScreen) game.getScreen();
-            gameScreen.setAbilitySelectionPaused(pause);
+            ((GameScreen) game.getScreen()).setAbilitySelectionPaused(pause);
             LogHelper.log("GameUI", "Game " + (pause ? "paused" : "resumed") + " for ability selection");
         } else {
             LogHelper.error("GameUI", "Could not find GameScreen to pause/resume");
@@ -1110,6 +1116,155 @@ public class GameUI implements Disposable {
         }
         if (abilityInfoWindow != null) {
             abilityInfoWindow.remove();
+        }
+    }
+
+    /**
+     * Показывает меню паузы с указанными действиями
+     *
+     * @param resumeAction     действие при нажатии "Продолжить"
+     * @param exitToMenuAction действие при нажатии "Выход в меню"
+     */
+    public void showPauseMenu(final Runnable resumeAction, final Runnable exitToMenuAction) {
+        // Если окно уже существует, удаляем его
+        if (pauseWindow != null) {
+            pauseWindow.remove();
+        }
+
+        // Создаем окно с заголовком "Пауза"
+        pauseWindow = new Window("ПАУЗА", skin);
+        pauseWindow.setMovable(false);
+        pauseWindow.setModal(true);
+        pauseWindow.setSize(300, 250);
+        pauseWindow.setPosition((stage.getWidth() - pauseWindow.getWidth()) / 2,
+            (stage.getHeight() - pauseWindow.getHeight()) / 2);
+
+        // Создаем кнопки
+        TextButton resumeButton = uiHelper.createButton("Продолжить", new Color(0.3f, 0.5f, 0.3f, 0.8f));
+        TextButton exitToMenuButton = uiHelper.createButton("Выход в меню", new Color(0.5f, 0.3f, 0.3f, 0.8f));
+        TextButton exitButton = uiHelper.createButton("Выход из игры", new Color(0.7f, 0.2f, 0.2f, 0.8f));
+
+        // Добавляем обработчики нажатий
+        resumeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                hidePauseMenu();
+                if (resumeAction != null) {
+                    resumeAction.run();
+                }
+            }
+        });
+
+        exitToMenuButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                hidePauseMenu();
+                if (exitToMenuAction != null) {
+                    exitToMenuAction.run();
+                }
+            }
+        });
+
+        exitButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.exit();
+            }
+        });
+
+        // Создаем таблицу для размещения кнопок
+        Table buttonTable = new Table();
+        buttonTable.defaults().pad(10).size(200, 50).fill();
+        buttonTable.add(resumeButton).row();
+        buttonTable.add(exitToMenuButton).row();
+        buttonTable.add(exitButton).row();
+
+        // Добавляем таблицу в окно
+        pauseWindow.add(buttonTable).expand().fill();
+
+        // Добавляем окно на сцену
+        stage.addActor(pauseWindow);
+
+        // Добавляем обработчик ввода для клавиши Escape
+        pauseWindow.addListener(new InputListener() {
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                if (keycode == Input.Keys.ESCAPE) {
+                    hidePauseMenu();
+                    if (resumeAction != null) {
+                        resumeAction.run();
+                    }
+                    return true;
+                }
+                return super.keyDown(event, keycode);
+            }
+        });
+
+        // Запрашиваем фокус ввода
+        stage.setKeyboardFocus(pauseWindow);
+    }
+
+    /**
+     * Скрывает меню паузы
+     */
+    public void hidePauseMenu() {
+        if (pauseWindow != null) {
+            pauseWindow.remove();
+            pauseWindow = null;
+        }
+    }
+
+    // Создает кнопку паузы
+    private void createPauseButton() {
+        // Создаем кнопку паузы с текстовым символом паузы
+        pauseButton = uiHelper.createButton("II", new Color(0.3f, 0.3f, 0.6f, 0.9f));
+        pauseButton.setSize(70, 70);
+        pauseButton.getLabel().setFontScale(1.5f);
+
+        // Размещаем кнопку в левом верхнем углу
+        pauseButton.setPosition(20,
+            stage.getHeight() - pauseButton.getHeight() - 20);
+
+        // Добавляем фон для лучшей видимости
+        pauseButtonBackground = uiHelper.createPanel(pauseButton.getWidth() + 10, pauseButton.getHeight() + 10,
+            new Color(0.1f, 0.1f, 0.2f, 0.7f));
+        pauseButtonBackground.setPosition(pauseButton.getX() - 5, pauseButton.getY() - 5);
+
+        // Добавляем обработчик нажатия
+        pauseButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                // Находим GameScreen и вызываем его метод для паузы
+                if (player != null && player.getStage() != null) {
+                    Main game = (Main) Gdx.app.getApplicationListener();
+                    if (game != null && game.getScreen() instanceof GameScreen) {
+                        GameScreen gameScreen = (GameScreen) game.getScreen();
+                        gameScreen.togglePause();
+                    }
+                }
+            }
+        });
+
+        // Добавляем фон и кнопку на сцену
+        stage.addActor(pauseButtonBackground);
+        stage.addActor(pauseButton);
+    }
+
+    /**
+     * Обновляет позиции элементов UI при изменении размера экрана
+     *
+     * @param width  новая ширина экрана
+     * @param height новая высота экрана
+     */
+    public void resize(int width, int height) {
+        // Обновляем позицию кнопки паузы
+        if (pauseButton != null) {
+            pauseButton.setPosition(20,
+                height - pauseButton.getHeight() - 20);
+
+            if (pauseButtonBackground != null) {
+                pauseButtonBackground.setPosition(pauseButton.getX() - 5, pauseButton.getY() - 5);
+            }
         }
     }
 }

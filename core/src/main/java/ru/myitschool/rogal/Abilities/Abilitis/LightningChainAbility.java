@@ -27,7 +27,7 @@ public class LightningChainAbility extends Ability {
     private float chainRange = 280f;            // Увеличена дальность перескока
     private int maxJumps = 3;                   // Увеличено начальное количество перескоков
     private float damageFalloff = 0.7f;         // Увеличен коэффициент уменьшения урона
-    private String lightningTexturePath = "abilities/lightning.png";
+    private final String lightningTexturePath = "abilities/lightning.png";
 
     /**
      * Конструктор способности Молниевая Цепь
@@ -164,7 +164,6 @@ public class LightningChainAbility extends Ability {
         for (Actor actor : stage.getActors()) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
-
                 Vector2 enemyPos = new Vector2(enemy.getX() + enemy.getOriginX(),
                                              enemy.getY() + enemy.getOriginY());
                 float distance = position.dst(enemyPos);
@@ -198,7 +197,6 @@ public class LightningChainAbility extends Ability {
         for (Actor actor : stage.getActors()) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
-
                 // Пропускаем уже пораженных врагов
                 if (excludeEnemies.contains(enemy, true)) {
                     continue;

@@ -4,14 +4,18 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -20,12 +24,16 @@ import ru.myitschool.rogal.CustomHelpers.utils.ButtonCreator;
 import ru.myitschool.rogal.CustomHelpers.utils.FontManager;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 import ru.myitschool.rogal.CustomHelpers.utils.PlayerData;
+import ru.myitschool.rogal.CustomHelpers.utils.UISkinHelper;
+import ru.myitschool.rogal.CustomHelpers.utils.UpdateDialog;
+import ru.myitschool.rogal.CustomHelpers.utils.UpdateManager;
 import ru.myitschool.rogal.Main;
 
 public class StartScreen implements Screen {
     private final Main game;
     private final Stage stage;
     private final Texture backgroundTexture;
+    private Texture refreshIconTexture;
     private boolean fullscreen = true;
 
     public StartScreen(final Main game) {
@@ -39,6 +47,7 @@ public class StartScreen implements Screen {
     }
 
     private void createUI() {
+        // Основная таблица с меню
         Table table = new Table();
         table.setFillParent(true);
 
@@ -106,9 +115,15 @@ public class StartScreen implements Screen {
         Label currencyLabel = new Label("Кредиты: " + PlayerData.getCurrency(), currencyStyle);
         currencyLabel.setAlignment(Align.center);
 
+        // Отображаем версию игры
+        Label.LabelStyle versionStyle = new Label.LabelStyle(FontManager.getSmallFont(), Color.LIGHT_GRAY);
+        Label versionLabel = new Label("Версия: " + Main.VERSION, versionStyle);
+        versionLabel.setAlignment(Align.center);
+
         // Добавляем элементы на сцену
         table.add(titleLabel).padBottom(30).row();
-        table.add(currencyLabel).padBottom(30).row();
+        table.add(currencyLabel).padBottom(10).row();
+        table.add(versionLabel).padBottom(30).row();
         table.add(playButton).width(300).height(80).padBottom(20).row();
         table.add(upgradeButton).width(300).height(80).padBottom(20).row();
         table.add(leaderboardButton).width(300).height(80).padBottom(20).row();
@@ -117,7 +132,70 @@ public class StartScreen implements Screen {
 
         stage.addActor(table);
 
+        // Создаем отдельную таблицу для кнопки обновления в левом верхнем углу
+        Table updateTable = new Table();
+        updateTable.setPosition(20, Main.SCREEN_HEIGHT - 60); // Позиционируем в левом верхнем углу с отступами
+
+        // Фон для кнопки обновления
+        updateTable.setBackground(ButtonCreator.createBackground(new Color(0.2f, 0.2f, 0.3f, 0.8f)));
+        updateTable.pad(5);
+
+        // Создаем кнопку "Обновления" с уменьшенным размером
+        TextButton updateButton = ButtonCreator.createButton("ОБНОВЛЕНИЯ", FontManager.getSmallFont());
+
+        // Добавляем иконку обновления (условно создаем круглую иконку)
+        refreshIconTexture = createRefreshIcon();
+        Image refreshIcon = new Image(new TextureRegionDrawable(new TextureRegion(refreshIconTexture)));
+
+        updateButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                // Показываем диалог обновлений
+                showUpdateDialog();
+            }
+        });
+
+        // Добавляем иконку и кнопку в таблицу
+        updateTable.add(refreshIcon).size(24, 24).padRight(5);
+        updateTable.add(updateButton).width(120).height(40);
+
+        stage.addActor(updateTable);
+
         LogHelper.log("StartScreen", "UI created");
+    }
+
+    /**
+     * Создает текстуру с иконкой обновления
+     */
+    private Texture createRefreshIcon() {
+        // Создаем простую иконку обновления круглой формы со стрелкой
+        Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+
+        // Фон иконки
+        pixmap.setColor(0.3f, 0.7f, 1f, 1f);
+        pixmap.fillCircle(16, 16, 14);
+
+        // Обводка
+        pixmap.setColor(Color.WHITE);
+        pixmap.drawCircle(16, 16, 14);
+
+        // Рисуем стрелку обновления
+        pixmap.setColor(Color.WHITE);
+        pixmap.fillTriangle(16, 8, 22, 14, 10, 14);
+        pixmap.fillRectangle(15, 13, 2, 10);
+
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+
+        return texture;
+    }
+
+    /**
+     * Показывает диалог обновлений
+     */
+    private void showUpdateDialog() {
+        UpdateDialog updateDialog = new UpdateDialog(stage, UISkinHelper.createDefaultSkin());
+        updateDialog.show(stage);
     }
 
     @Override
@@ -128,6 +206,9 @@ public class StartScreen implements Screen {
         if (!PlayerData.hasPlayerName()) {
             showNameInputDialog();
         }
+
+        // Автоматически проверяем обновления в фоне, и показываем диалог только если есть обновления
+        checkUpdatesInBackground();
     }
 
     /**
@@ -198,6 +279,69 @@ public class StartScreen implements Screen {
         nameField.selectAll(); // Выделяем текст по умолчанию для удобства
     }
 
+    /**
+     * Проверяет наличие обновлений в фоновом режиме и показывает диалог только при наличии обновлений
+     */
+    private void checkUpdatesInBackground() {
+        LogHelper.log("StartScreen", "Проверка обновлений в фоне...");
+
+        // Создаем слушателя для обработки результатов проверки
+        UpdateManager.UpdateListener listener = new UpdateManager.UpdateListener() {
+            @Override
+            public void onUpdateAvailable(String version, String downloadUrl) {
+                LogHelper.log("StartScreen", "Доступно обновление: " + version);
+                // Показываем диалог только если есть обновление
+                Gdx.app.postRunnable(() -> {
+                    showUpdateDialogWithMessage("Доступно обновление: " + version +
+                        "\nТекущая версия: " + UpdateManager.getInstance().getCurrentVersion());
+                });
+            }
+
+            @Override
+            public void onNoUpdateAvailable() {
+                LogHelper.log("StartScreen", "Обновлений не найдено");
+                // Не показываем никаких диалогов, если обновлений нет
+            }
+
+            @Override
+            public void onUpdateCheckFailed(String errorMessage) {
+                LogHelper.log("StartScreen", "Ошибка при проверке обновлений: " + errorMessage);
+                // Не показываем сообщение об ошибке, чтобы не беспокоить пользователя
+            }
+
+            // Остальные методы интерфейса, которые не используются при фоновой проверке
+            @Override
+            public void onUpdateDownloaded(String filePath) {
+            }
+
+            @Override
+            public void onUpdateDownloadFailed(String errorMessage) {
+            }
+
+            @Override
+            public void onUpdateReadyToInstall(String filePath) {
+            }
+
+            @Override
+            public void onUpdateInstallFailed(String errorMessage) {
+            }
+        };
+
+        // Устанавливаем временного слушателя и инициируем проверку
+        UpdateManager.getInstance().setListener(listener);
+        UpdateManager.getInstance().checkForUpdates();
+    }
+
+    /**
+     * Показывает диалог обновлений с предварительным сообщением
+     */
+    private void showUpdateDialogWithMessage(String message) {
+        UpdateDialog updateDialog = new UpdateDialog(stage, UISkinHelper.createDefaultSkin(), message);
+        // Отключаем автоматическую проверку, так как мы уже знаем, что обновление доступно
+        updateDialog.disableAutomaticCheck();
+        updateDialog.show(stage);
+    }
+
     @Override
     public void render(float delta) {
         handleFullscreenToggle();
@@ -244,5 +388,8 @@ public class StartScreen implements Screen {
     public void dispose() {
         stage.dispose();
         backgroundTexture.dispose();
+        if (refreshIconTexture != null) {
+            refreshIconTexture.dispose();
+        }
     }
 }

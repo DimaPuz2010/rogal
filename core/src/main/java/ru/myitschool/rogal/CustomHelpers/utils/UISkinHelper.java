@@ -8,13 +8,15 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox.CheckBoxStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List.ListStyle;
+import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane.ScrollPaneStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox.SelectBoxStyle;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider.SliderStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider.SliderStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,23 +24,23 @@ import java.util.Map;
  * Вспомогательный класс для создания скина UI элементов
  */
 public class UISkinHelper {
-    private static Map<String, Texture> textures = new HashMap<>();
-    
+    private static final Map<String, Texture> textures = new HashMap<>();
+
     /**
      * Создает и инициализирует скин для UI-элементов
      * @return созданный скин
      */
     public static Skin createSkin() {
         Skin skin = new Skin();
-        
+
         generateTextures();
-        
+
         skin.add("default", FontManager.getRegularFont(), BitmapFont.class);
-    
+
         for (Map.Entry<String, Texture> entry : textures.entrySet()) {
             skin.add(entry.getKey(), entry.getValue());
         }
-        
+
         createScrollPaneStyle(skin);
         createListStyle(skin);
         createSelectBoxStyle(skin);
@@ -47,10 +49,55 @@ public class UISkinHelper {
         createWindowStyle(skin);
         createTextButtonStyle(skin);
         createLabelStyle(skin);
-        
+
         return skin;
     }
-    
+
+    /**
+     * Создает и инициализирует скин для UI-элементов с дополнительными стилями для диалогов
+     *
+     * @return созданный скин с полным набором стилей
+     */
+    public static Skin createDefaultSkin() {
+        Skin skin = createSkin();
+
+        // Добавляем стиль для ProgressBar
+        createProgressBarStyle(skin);
+
+        return skin;
+    }
+
+    /**
+     * Создает стиль для ProgressBar
+     *
+     * @param skin скин для добавления стиля
+     */
+    private static void createProgressBarStyle(Skin skin) {
+        // Создаем текстуру для фона прогресс-бара
+        Pixmap progressBgPixmap = new Pixmap(100, 20, Pixmap.Format.RGBA8888);
+        progressBgPixmap.setColor(new Color(0.2f, 0.2f, 0.4f, 1));
+        progressBgPixmap.fill();
+        Texture progressBgTexture = new Texture(progressBgPixmap);
+        skin.add("progress-bg", progressBgTexture);
+        progressBgPixmap.dispose();
+
+        // Создаем текстуру для заполненной части прогресс-бара
+        Pixmap progressKnobPixmap = new Pixmap(100, 20, Pixmap.Format.RGBA8888);
+        progressKnobPixmap.setColor(new Color(0.4f, 0.7f, 0.4f, 1));
+        progressKnobPixmap.fill();
+        Texture progressKnobTexture = new Texture(progressKnobPixmap);
+        skin.add("progress-knob", progressKnobTexture);
+        progressKnobPixmap.dispose();
+
+        // Создаем стиль для прогресс-бара
+        ProgressBar.ProgressBarStyle progressBarStyle = new ProgressBar.ProgressBarStyle();
+        progressBarStyle.background = new TextureRegionDrawable(new TextureRegion(skin.get("progress-bg", Texture.class)));
+        progressBarStyle.knob = new TextureRegionDrawable(new TextureRegion(skin.get("progress-knob", Texture.class)));
+        progressBarStyle.knobBefore = progressBarStyle.knob;
+
+        skin.add("default-horizontal", progressBarStyle);
+    }
+
     /**
      * Генерирует все необходимые текстуры для UI-элементов
      */
@@ -69,14 +116,14 @@ public class UISkinHelper {
         checkboxOnPixmap.fillRectangle(4, 4, 12, 12);
         textures.put("checkbox-on", new Texture(checkboxOnPixmap));
         checkboxOnPixmap.dispose();
-        
+
         // Чекбокс выключенный
         Pixmap checkboxOffPixmap = new Pixmap(20, 20, Pixmap.Format.RGBA8888);
         checkboxOffPixmap.setColor(Color.WHITE);
         checkboxOffPixmap.drawRectangle(0, 0, 20, 20);
         textures.put("checkbox-off", new Texture(checkboxOffPixmap));
         checkboxOffPixmap.dispose();
-        
+
         // SelectBox фон
         Pixmap selectBoxPixmap = new Pixmap(100, 30, Pixmap.Format.RGBA8888);
         selectBoxPixmap.setColor(new Color(0.2f, 0.2f, 0.4f, 1));
@@ -85,49 +132,49 @@ public class UISkinHelper {
         selectBoxPixmap.drawRectangle(0, 0, 100, 30);
         textures.put("selectbox", new Texture(selectBoxPixmap));
         selectBoxPixmap.dispose();
-        
+
         // Выделение элемента списка
         Pixmap selectionPixmap = new Pixmap(100, 30, Pixmap.Format.RGBA8888);
         selectionPixmap.setColor(new Color(0.4f, 0.4f, 0.6f, 1));
         selectionPixmap.fill();
         textures.put("selection", new Texture(selectionPixmap));
         selectionPixmap.dispose();
-        
+
         // Фон для ScrollPane
         Pixmap scrollPanePixmap = new Pixmap(100, 100, Pixmap.Format.RGBA8888);
         scrollPanePixmap.setColor(new Color(0.2f, 0.2f, 0.4f, 0.8f));
         scrollPanePixmap.fill();
         textures.put("scrollpane", new Texture(scrollPanePixmap));
         scrollPanePixmap.dispose();
-        
+
         // Горизонтальный скроллбар
         Pixmap scrollBarHPixmap = new Pixmap(100, 10, Pixmap.Format.RGBA8888);
         scrollBarHPixmap.setColor(new Color(0.3f, 0.3f, 0.5f, 1));
         scrollBarHPixmap.fill();
         textures.put("scrollbar-h", new Texture(scrollBarHPixmap));
         scrollBarHPixmap.dispose();
-        
+
         // Вертикальный скроллбар
         Pixmap scrollBarVPixmap = new Pixmap(10, 100, Pixmap.Format.RGBA8888);
         scrollBarVPixmap.setColor(new Color(0.3f, 0.3f, 0.5f, 1));
         scrollBarVPixmap.fill();
         textures.put("scrollbar-v", new Texture(scrollBarVPixmap));
         scrollBarVPixmap.dispose();
-        
+
         // Ползунок горизонтального скроллбара
         Pixmap scrollBarHKnobPixmap = new Pixmap(30, 10, Pixmap.Format.RGBA8888);
         scrollBarHKnobPixmap.setColor(Color.WHITE);
         scrollBarHKnobPixmap.fill();
         textures.put("scrollbar-knob-h", new Texture(scrollBarHKnobPixmap));
         scrollBarHKnobPixmap.dispose();
-        
+
         // Ползунок вертикального скроллбара
         Pixmap scrollBarVKnobPixmap = new Pixmap(10, 30, Pixmap.Format.RGBA8888);
         scrollBarVKnobPixmap.setColor(Color.WHITE);
         scrollBarVKnobPixmap.fill();
         textures.put("scrollbar-knob-v", new Texture(scrollBarVKnobPixmap));
         scrollBarVKnobPixmap.dispose();
-        
+
         // Фон для слайдера
         Pixmap sliderBgPixmap = new Pixmap(200, 10, Pixmap.Format.RGBA8888);
         sliderBgPixmap.setColor(new Color(0.2f, 0.2f, 0.4f, 1));
@@ -136,7 +183,7 @@ public class UISkinHelper {
         sliderBgPixmap.drawRectangle(0, 0, 200, 10);
         textures.put("slider-bg", new Texture(sliderBgPixmap));
         sliderBgPixmap.dispose();
-        
+
         // Ползунок для слайдера
         Pixmap sliderKnobPixmap = new Pixmap(20, 20, Pixmap.Format.RGBA8888);
         sliderKnobPixmap.setColor(new Color(0.4f, 0.4f, 0.7f, 1));
@@ -174,7 +221,7 @@ public class UISkinHelper {
         textures.put("button-over", new Texture(buttonOverPixmap));
         buttonOverPixmap.dispose();
     }
-    
+
     /**
      * Создает стиль для чекбокса
      * @param skin скин для добавления стиля
@@ -187,7 +234,7 @@ public class UISkinHelper {
         checkBoxStyle.fontColor = Color.WHITE;
         skin.add("default", checkBoxStyle);
     }
-    
+
     /**
      * Создает стиль для выпадающего списка
      * @param skin скин для добавления стиля
@@ -201,7 +248,7 @@ public class UISkinHelper {
         selectBoxStyle.listStyle = skin.get(ListStyle.class);
         skin.add("default", selectBoxStyle);
     }
-    
+
     /**
      * Создает стиль для списка
      * @param skin скин для добавления стиля
@@ -214,7 +261,7 @@ public class UISkinHelper {
         listStyle.selection = new TextureRegionDrawable(new TextureRegion(skin.get("selection", Texture.class)));
         skin.add("default", listStyle);
     }
-    
+
     /**
      * Создает стиль для прокручиваемой панели
      * @param skin скин для добавления стиля
@@ -228,7 +275,7 @@ public class UISkinHelper {
         scrollPaneStyle.vScrollKnob = new TextureRegionDrawable(new TextureRegion(skin.get("scrollbar-knob-v", Texture.class)));
         skin.add("default", scrollPaneStyle);
     }
-    
+
     /**
      * Создает стиль для слайдера
      * @param skin скин для добавления стиля
@@ -237,7 +284,7 @@ public class UISkinHelper {
         SliderStyle sliderStyle = new SliderStyle();
         sliderStyle.background = new TextureRegionDrawable(new TextureRegion(skin.get("slider-bg", Texture.class)));
         sliderStyle.knob = new TextureRegionDrawable(new TextureRegion(skin.get("slider-knob", Texture.class)));
-        
+
         // Регистрируем стиль под именем 'default-horizontal', которое запрашивается в коде
         skin.add("default-horizontal", sliderStyle);
     }
@@ -272,7 +319,7 @@ public class UISkinHelper {
         titleStyle.fontColor = new Color(1f, 0.8f, 0.2f, 1f);
         skin.add("title", titleStyle);
     }
-    
+
     /**
      * Освобождает все ресурсы
      */
@@ -284,4 +331,4 @@ public class UISkinHelper {
         }
         textures.clear();
     }
-} 
+}

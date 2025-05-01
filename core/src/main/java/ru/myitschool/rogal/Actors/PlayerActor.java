@@ -501,8 +501,11 @@ public class PlayerActor extends Actor {
      */
     private ArrayList<Ability> getUpgradableAbilities() {
         ArrayList<Ability> upgradable = new ArrayList<>();
+        int countMaxLevel = 0;
 
         Array<Ability> playerAbilities = abilityManager.getAbilities();
+        LogHelper.log("PlayerActor", "Проверка улучшаемых способностей, всего: " + playerAbilities.size);
+
         for (Ability ability : playerAbilities) {
             if (ability.getLevel() < MAX_ABILITY_LEVEL) {
                 try {
@@ -520,8 +523,15 @@ public class PlayerActor extends Actor {
                 } catch (Exception e) {
                     Gdx.app.error("PlayerActor", "Ошибка при создании копии способности", e);
                 }
+            } else {
+                countMaxLevel++;
+                LogHelper.log("PlayerActor", "Способность на максимальном уровне: " +
+                    ability.getName() + " (уровень " + ability.getLevel() + ")");
             }
         }
+
+        LogHelper.log("PlayerActor", "Найдено способностей для улучшения: " + upgradable.size() +
+            ", на максимальном уровне: " + countMaxLevel);
 
         return upgradable;
     }
@@ -533,6 +543,15 @@ public class PlayerActor extends Actor {
         ArrayList<Ability> choices = generateRandomAbilityChoices(3);
 
         if (gameUI != null && !choices.isEmpty()) {
+            // Логгируем информацию о возможных выборах
+            LogHelper.log("PlayerActor", "Предлагаются следующие способности (" + choices.size() + "):");
+            for (Ability ability : choices) {
+                boolean isUpgrade = findAbilityIndex(ability) >= 0;
+                LogHelper.log("PlayerActor", "- " + ability.getName() +
+                    " (уровень " + ability.getLevel() + ")" +
+                    (isUpgrade ? " [улучшение]" : " [новая]"));
+            }
+
             gameUI.showAbilityChoiceDialog(choices, ability -> {
                 int abilityIndex = findAbilityIndex(ability);
 
@@ -544,6 +563,8 @@ public class PlayerActor extends Actor {
                     Gdx.app.log("PlayerActor", "Получена новая способность: " + ability.getName());
                 }
             });
+        } else {
+            LogHelper.log("PlayerActor", "Нет доступных способностей для выбора");
         }
     }
 
@@ -571,18 +592,37 @@ public class PlayerActor extends Actor {
     private ArrayList<Ability> generateRandomAbilityChoices(int count) {
         ArrayList<Ability> result = new ArrayList<>();
 
+        // Получаем способности, которые можно улучшить
         ArrayList<Ability> upgradableAbilities = getUpgradableAbilities();
 
+        // Получаем новые способности
         ArrayList<Ability> newAbilities = generateNewAbilities();
 
+        // Проверяем, сколько у нас уже есть способностей
+        boolean allSlotsOccupied = abilityManager.getAbilityCount() >= AbilityManager.MAX_ABILITIES;
+
         ArrayList<Ability> allPossibleChoices = new ArrayList<>();
-        allPossibleChoices.addAll(upgradableAbilities);
-        allPossibleChoices.addAll(newAbilities);
+
+        // Если все слоты заняты, предлагаем только улучшения существующих способностей
+        if (allSlotsOccupied) {
+            allPossibleChoices.addAll(upgradableAbilities);
+
+            // Если нет способностей для улучшения, возвращаем пустой список
+            if (allPossibleChoices.isEmpty()) {
+                LogHelper.log("PlayerActor", "Все способности на максимальном уровне, новые способности не предлагаются");
+                return result;
+            }
+        } else {
+            // Если есть свободные слоты, предлагаем как новые способности, так и улучшения
+            allPossibleChoices.addAll(upgradableAbilities);
+            allPossibleChoices.addAll(newAbilities);
+        }
 
         if (allPossibleChoices.size() <= count) {
             return allPossibleChoices;
         }
 
+        // Перемешиваем список возможных способностей и выбираем случайные
         Collections.shuffle(allPossibleChoices, random);
         for (int i = 0; i < count; i++) {
             if (i < allPossibleChoices.size()) {
@@ -668,7 +708,7 @@ public class PlayerActor extends Actor {
         // Проверяем столкновения с врагами
         for (int i = 0; i < actors.size; i++) {
             Actor actor = actors.get(i);
-            if (actor instanceof EnemyActor){
+            if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
 
                 // Проверяем пересечение полигонов

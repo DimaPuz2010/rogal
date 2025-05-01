@@ -55,6 +55,9 @@ public class GameScreen implements Screen {
     // Флаг для паузы игры во время выбора способности
     private boolean isAbilitySelectionPaused = false;
 
+    // Флаг для паузы игры
+    private boolean isPaused = false;
+
     public GameScreen(Main game) {
         this.game = game;
     }
@@ -248,11 +251,14 @@ public class GameScreen implements Screen {
         // Удаляем обработку ввода касания отсюда, так как теперь она делается через InputProcessor
 
         ScreenUtils.clear(0, 0, 0, 1);
+
+        // Обновляем положение камеры, чтобы она следовала за игроком
         updateCamera();
+
         background.render();
 
         // Обновление игровой логики только если не на паузе
-        if (!isAbilitySelectionPaused) {
+        if (!isAbilitySelectionPaused && !isPaused) {
             gameStage.act(delta);
 
             // Обновляем менеджер противников
@@ -265,15 +271,15 @@ public class GameScreen implements Screen {
         gameStage.draw();
 
         // Отрисовка маркера целевой точки для режима управления касанием
-        // Не отображаем маркер если выбор способности
+        // Не отображаем маркер если выбор способности или пауза
         if (PlayerData.getControlMode() == 1 && player != null && player.isMovingToTarget()
-            && gameUI != null && !isAbilitySelectionPaused) {
+            && gameUI != null && !isAbilitySelectionPaused && !isPaused) {
             gameStage.getBatch().begin();
             gameUI.drawTargetMarker(gameStage.getBatch());
             gameStage.getBatch().end();
         }
 
-        // Обновление и отрисовка UI всегда
+        // Отрисовка UI всегда
         uiStage.act(delta);
         uiStage.draw();
 
@@ -298,33 +304,30 @@ public class GameScreen implements Screen {
         // Отрисовка хитбоксов врагов
         for (Actor actor : gameStage.getActors()) {
             if (actor instanceof EnemyActor) {
-                EnemyActor enemy = (EnemyActor)actor;
+                EnemyActor enemy = (EnemyActor) actor;
                 HitboxHelper.renderHitbox(enemy.getHitbox(), Color.RED, camera);
             }
         }
     }
 
     private void handleInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.X) && player != null) {
+        // Обработка нажатия клавиш для тестовых действий
+        if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
             player.addExperience(50);
-            LogHelper.log("GameScreen", "Added 50 XP to player");
         }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.Z) && player != null) {
-            boolean damaged = player.takeDamage(50);
-            LogHelper.log("GameScreen", "Damage taken: " + (damaged ? "Yes" : "No (invulnerable)"));
+        if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
+            player.takeDamage(20);
         }
-
-        // Переключение режима отладки клавишей D
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E) && enemyManager != null) {
+            // Используем методы, которые точно есть в EnemyManager
+            enemyManager.update(0); // Просто обновляем менеджер врагов
+        }
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             debugMode = !debugMode;
-            LogHelper.log("GameScreen", "Debug mode: " + (debugMode ? "ON" : "OFF"));
         }
-
-        // Добавляем обработку клавиши N для перехода к следующей волне (для тестирования)
-        if (Gdx.input.isKeyJustPressed(Input.Keys.N) && enemyManager != null) {
-            enemyManager.forceNextWave();
-            LogHelper.log("GameScreen", "Manually triggered next wave");
+        // Обработка клавиши Escape для вызова/скрытия меню паузы
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            togglePause();
         }
     }
 
@@ -343,6 +346,11 @@ public class GameScreen implements Screen {
     public void resize(int width, int height) {
         gameStage.getViewport().update(width, height);
         uiStage.getViewport().update(width, height);
+
+        // Обновляем позиции элементов UI
+        if (gameUI != null) {
+            gameUI.resize(width, height);
+        }
     }
 
     @Override
@@ -575,6 +583,34 @@ public class GameScreen implements Screen {
             if (gameUI != null) {
                 gameUI.setTargetPosition(touchPos.x, touchPos.y);
             }
+        }
+    }
+
+    /**
+     * Переключает состояние паузы игры и отображает/скрывает меню паузы
+     */
+    public void togglePause() {
+        isPaused = !isPaused;
+
+        if (isPaused) {
+            // Показываем меню паузы
+            gameUI.showPauseMenu(new Runnable() {
+                @Override
+                public void run() {
+                    // Продолжение игры
+                    isPaused = false;
+                }
+            }, new Runnable() {
+                @Override
+                public void run() {
+                    // Выход в главное меню
+                    game.setScreen(new StartScreen(game));
+                    dispose();
+                }
+            });
+        } else {
+            // Скрываем меню паузы
+            gameUI.hidePauseMenu();
         }
     }
 }

@@ -12,6 +12,7 @@ abilities/heal_icon.png
 abilities/healing_aura_effect.png
 abilities/lightning.png
 fonts/NeuePixelSans.ttf
+fonts/OpenSans-Italic-VariableFont_wdth,wght.ttf
 joystick-background.png
 joystick-knob.png
 target-marker.png
