@@ -1,5 +1,6 @@
 package ru.myitschool.rogal.CustomHelpers.utils;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
@@ -1183,7 +1184,7 @@ public class GameUI implements Disposable {
         pauseWindow.add(buttonTable).expand().fill();
 
         // Добавляем окно на сцену
-        stage.addActor(pauseWindow);
+        this.stage.addActor(pauseWindow);
 
         // Добавляем обработчик ввода для клавиши Escape
         pauseWindow.addListener(new InputListener() {
@@ -1201,7 +1202,7 @@ public class GameUI implements Disposable {
         });
 
         // Запрашиваем фокус ввода
-        stage.setKeyboardFocus(pauseWindow);
+        this.stage.setKeyboardFocus(pauseWindow);
     }
 
     /**
@@ -1216,19 +1217,29 @@ public class GameUI implements Disposable {
 
     // Создает кнопку паузы
     private void createPauseButton() {
+        // Определяем, является ли устройство мобильным
+        boolean isMobile = Gdx.app.getType() == Application.ApplicationType.Android ||
+            Gdx.app.getType() == Application.ApplicationType.iOS;
+
+        // Выбираем размер и отступ в зависимости от типа устройства
+        float buttonSize = isMobile ? 150 : 70; // Увеличиваем размер на мобильных устройствах
+        float buttonPadding = isMobile ? 30 : 20;
+        float fontScale = isMobile ? 3.0f : 1.5f; // Увеличиваем размер шрифта
+
         // Создаем кнопку паузы с текстовым символом паузы
-        pauseButton = uiHelper.createButton("II", new Color(0.3f, 0.3f, 0.6f, 0.9f));
-        pauseButton.setSize(70, 70);
-        pauseButton.getLabel().setFontScale(1.5f);
+        pauseButton = uiHelper.createButton("II", new Color(0.3f, 0.3f, 0.8f, 1.0f)); // Более яркий цвет
+        pauseButton.setSize(buttonSize, buttonSize);
+        pauseButton.getLabel().setFontScale(fontScale);
 
-        // Размещаем кнопку в левом верхнем углу
-        pauseButton.setPosition(20,
-            stage.getHeight() - pauseButton.getHeight() - 20);
+        // Размещаем кнопку в правом верхнем углу
+        pauseButton.setPosition(
+            stage.getWidth() - buttonSize - buttonPadding,
+            stage.getHeight() - buttonSize - buttonPadding);
 
-        // Добавляем фон для лучшей видимости
-        pauseButtonBackground = uiHelper.createPanel(pauseButton.getWidth() + 10, pauseButton.getHeight() + 10,
-            new Color(0.1f, 0.1f, 0.2f, 0.7f));
-        pauseButtonBackground.setPosition(pauseButton.getX() - 5, pauseButton.getY() - 5);
+        // Добавляем фон для лучшей видимости - немного больше чем кнопка
+        pauseButtonBackground = uiHelper.createPanel(buttonSize + 30, buttonSize + 30,
+            new Color(0.1f, 0.1f, 0.3f, 0.95f)); // Увеличиваем непрозрачность фона
+        pauseButtonBackground.setPosition(pauseButton.getX() - 15, pauseButton.getY() - 15);
 
         // Добавляем обработчик нажатия
         pauseButton.addListener(new ClickListener() {
@@ -1240,14 +1251,23 @@ public class GameUI implements Disposable {
                     if (game != null && game.getScreen() instanceof GameScreen) {
                         GameScreen gameScreen = (GameScreen) game.getScreen();
                         gameScreen.togglePause();
+                        LogHelper.log("GameUI", "Кнопка паузы нажата");
                     }
                 }
             }
         });
 
+        // Удаляем со сцены, если уже были добавлены
+        if (pauseButtonBackground.getStage() != null) pauseButtonBackground.remove();
+        if (pauseButton.getStage() != null) pauseButton.remove();
+
         // Добавляем фон и кнопку на сцену
         stage.addActor(pauseButtonBackground);
         stage.addActor(pauseButton);
+
+        // Логируем создание кнопки паузы
+        LogHelper.log("GameUI", "Кнопка паузы создана. Размер: " + buttonSize + ", Позиция: " +
+            pauseButton.getX() + "," + pauseButton.getY() + ", Мобильное: " + isMobile);
     }
 
     /**
@@ -1257,14 +1277,51 @@ public class GameUI implements Disposable {
      * @param height новая высота экрана
      */
     public void resize(int width, int height) {
+        LogHelper.log("GameUI", "Resize вызван: ширина=" + width + ", высота=" + height);
+
         // Обновляем позицию кнопки паузы
         if (pauseButton != null) {
-            pauseButton.setPosition(20,
-                height - pauseButton.getHeight() - 20);
+            boolean isMobile = Gdx.app.getType() == Application.ApplicationType.Android ||
+                Gdx.app.getType() == Application.ApplicationType.iOS;
+            LogHelper.log("GameUI", "Resize: устройство мобильное=" + isMobile);
+
+            float buttonSize = isMobile ? 150 : 70;
+            float buttonPadding = isMobile ? 30 : 20;
+
+            // Устанавливаем новые позиции относительно обновленного размера экрана
+            float newX = width - buttonSize - buttonPadding;
+            float newY = height - buttonSize - buttonPadding;
+
+            pauseButton.setPosition(newX, newY);
+            LogHelper.log("GameUI", "Новая позиция кнопки паузы: x=" + newX + ", y=" + newY);
 
             if (pauseButtonBackground != null) {
-                pauseButtonBackground.setPosition(pauseButton.getX() - 5, pauseButton.getY() - 5);
+                pauseButtonBackground.setPosition(pauseButton.getX() - 15, pauseButton.getY() - 15);
+            } else {
+                LogHelper.log("GameUI", "pauseButtonBackground is null, создаем его");
+                // Если фон для паузы отсутствует, создаем его
+                pauseButtonBackground = uiHelper.createPanel(buttonSize + 30, buttonSize + 30,
+                    new Color(0.1f, 0.1f, 0.3f, 0.95f));
+                pauseButtonBackground.setPosition(pauseButton.getX() - 15, pauseButton.getY() - 15);
             }
+
+            // Перемещаем кнопку на передний план (удаляем и добавляем снова)
+            if (pauseButton.getStage() != null) pauseButton.remove();
+            if (pauseButtonBackground != null && pauseButtonBackground.getStage() != null)
+                pauseButtonBackground.remove();
+
+            // Добавляем элементы на сцену в правильном порядке
+            stage.addActor(pauseButtonBackground);
+            stage.addActor(pauseButton);
+
+            LogHelper.log("GameUI", "Кнопка паузы обновлена и размещена поверх других элементов");
+        } else {
+            LogHelper.log("GameUI", "pauseButton is null, создаем кнопку паузы заново");
+            // Если кнопка паузы отсутствует, создаем ее
+            createPauseButton();
         }
+
+        // Обновляем другие элементы UI если необходимо
+        // ...
     }
 }

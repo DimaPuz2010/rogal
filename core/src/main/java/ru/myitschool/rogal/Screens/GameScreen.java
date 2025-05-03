@@ -231,7 +231,7 @@ public class GameScreen implements Screen {
         Gdx.input.setCatchKey(Input.Keys.X, true); // Клавиша для добаления опыта(50)
         Gdx.input.setCatchKey(Input.Keys.Z, true); // Клавиша для нанесения урона игроку(20)
         Gdx.input.setCatchKey(Input.Keys.E, true); // Клавиша для спавна врага
-        Gdx.input.setCatchKey(Input.Keys.D, true); // Клавиша для включения режима отладки
+        Gdx.input.setCatchKey(Input.Keys.P, true); // Клавиша для включения режима отладки
 
         LogHelper.log("GameScreen", "Game screen initialized");
     }
@@ -311,18 +311,20 @@ public class GameScreen implements Screen {
     }
 
     private void handleInput() {
-        // Обработка нажатия клавиш для тестовых действий
-        if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
-            player.addExperience(50);
+        if (debugMode) {
+            // Обработка нажатия клавиш для тестовых действий
+            if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
+                player.addExperience(100);
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
+                player.takeDamage(50);
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.E) && enemyManager != null) {
+                // Используем методы, которые точно есть в EnemyManager
+                enemyManager.update(0); // Просто обновляем менеджер врагов
+            }
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
-            player.takeDamage(20);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E) && enemyManager != null) {
-            // Используем методы, которые точно есть в EnemyManager
-            enemyManager.update(0); // Просто обновляем менеджер врагов
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             debugMode = !debugMode;
         }
         // Обработка клавиши Escape для вызова/скрытия меню паузы
@@ -344,13 +346,26 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        gameStage.getViewport().update(width, height);
-        uiStage.getViewport().update(width, height);
+        LogHelper.log("GameScreen", "Resize вызван: ширина=" + width + ", высота=" + height);
+
+        // Обновляем вьюпорты для обеих сцен
+        gameStage.getViewport().update(width, height, true);
+        uiStage.getViewport().update(width, height, true);
+
+        LogHelper.log("GameScreen", "Вьюпорты обновлены");
 
         // Обновляем позиции элементов UI
         if (gameUI != null) {
+            LogHelper.log("GameScreen", "Обновляем gameUI");
             gameUI.resize(width, height);
+        } else {
+            LogHelper.log("GameScreen", "gameUI is null");
         }
+
+        // Проверяем тип устройства и добавляем логи
+        boolean isMobile = Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Android ||
+            Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.iOS;
+        LogHelper.log("GameScreen", "Тип устройства: " + Gdx.app.getType() + ", мобильное: " + isMobile);
     }
 
     @Override
@@ -605,7 +620,6 @@ public class GameScreen implements Screen {
                 public void run() {
                     // Выход в главное меню
                     game.setScreen(new StartScreen(game));
-                    dispose();
                 }
             });
         } else {

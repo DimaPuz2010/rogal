@@ -17,19 +17,10 @@ public class Main extends Game {
     public static final int SCREEN_WIDTH = 1280;
     public static final int SCREEN_HEIGHT = 720;
 
-    // Версия приложения, загружаемая из gradle.properties
-    public static String VERSION = "1.0.6";
-
-    // Сохраняем экземпляр для доступа из других классов
-    private static Main instance;
-
-    public static Main getInstance() {
-        return instance;
-    }
+    public static String VERSION = "1.0.7";
 
     @Override
     public void create() {
-        instance = this;
 
         // Загружаем версию из gradle.properties
         loadVersion();
