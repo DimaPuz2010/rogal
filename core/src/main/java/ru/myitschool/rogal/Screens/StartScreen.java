@@ -158,8 +158,21 @@ public class StartScreen implements Screen {
      * Показывает диалог обновлений
      */
     private void showUpdateDialog() {
-        UpdateDialog updateDialog = new UpdateDialog(stage, UISkinHelper.createDefaultSkin());
-        updateDialog.show(stage);
+        // Проверяем, нет ли уже открытого диалога
+        boolean dialogFound = false;
+        for (Actor actor : stage.getActors()) {
+            if (actor instanceof UpdateDialog) {
+                LogHelper.log("StartScreen", "Диалог обновлений уже открыт");
+                dialogFound = true;
+                break;
+            }
+        }
+
+        // Если уже есть диалог, не создаем новый
+        if (!dialogFound) {
+            UpdateDialog updateDialog = new UpdateDialog(stage, UISkinHelper.createDefaultSkin());
+            updateDialog.show(stage);
+        }
     }
 
     @Override
@@ -300,10 +313,23 @@ public class StartScreen implements Screen {
      * Показывает диалог обновлений с предварительным сообщением
      */
     private void showUpdateDialogWithMessage(String message) {
-        UpdateDialog updateDialog = new UpdateDialog(stage, UISkinHelper.createDefaultSkin(), message);
-        // Отключаем автоматическую проверку, так как мы уже знаем, что обновление доступно
-        updateDialog.disableAutomaticCheck();
-        updateDialog.show(stage);
+        // Проверяем, нет ли уже открытого диалога
+        boolean dialogFound = false;
+        for (Actor actor : stage.getActors()) {
+            if (actor instanceof UpdateDialog) {
+                LogHelper.log("StartScreen", "Диалог обновлений уже открыт");
+                dialogFound = true;
+                break;
+            }
+        }
+
+        // Если уже есть диалог, не создаем новый
+        if (!dialogFound) {
+            UpdateDialog updateDialog = new UpdateDialog(stage, UISkinHelper.createDefaultSkin(), message);
+            // Отключаем автоматическую проверку, так как мы уже знаем, что обновление доступно
+            updateDialog.disableAutomaticCheck();
+            updateDialog.show(stage);
+        }
     }
 
     @Override
