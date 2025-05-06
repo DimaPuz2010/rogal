@@ -11,6 +11,7 @@ abilities/frost_aura.png
 abilities/heal_icon.png
 abilities/healing_aura_effect.png
 abilities/lightning.png
+abilities/relsatron.png
 fonts/NeuePixelSans.ttf
 fonts/OpenSans-Italic-VariableFont_wdth,wght.ttf
 joystick-background.png

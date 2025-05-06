@@ -52,10 +52,18 @@ public class FontManager {
         parameter.shadowOffsetX = 1;
         parameter.shadowOffsetY = 1;
         parameter.shadowColor = new Color(0, 0, 0, 0.5f);
+        // Улучшаем сглаживание шрифта
+        parameter.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear;
+        parameter.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear;
+        parameter.genMipMaps = true;
+        // Настройки хинтинга для улучшения отображения
+        parameter.hinting = FreeTypeFontGenerator.Hinting.AutoMedium;
         // Добавляем поддержку кириллицы
         parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя";
 
         BitmapFont font = generator.generateFont(parameter);
+        font.getRegion().getTexture().setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear,
+            com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
         generator.dispose();
 
         return font;
