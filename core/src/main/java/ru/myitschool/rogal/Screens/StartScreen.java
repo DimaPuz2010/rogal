@@ -29,7 +29,6 @@ public class StartScreen implements Screen {
     private final Main game;
     private final Stage stage;
     private final Texture backgroundTexture;
-    private Texture refreshIconTexture;
     private boolean fullscreen = true;
 
     public StartScreen(final Main game) {
@@ -267,10 +266,10 @@ public class StartScreen implements Screen {
             @Override
             public void onUpdateAvailable(String version, String downloadUrl) {
                 LogHelper.log("StartScreen", "Доступно обновление: " + version);
-                // Показываем диалог только если есть обновление
                 Gdx.app.postRunnable(() -> {
                     showUpdateDialogWithMessage("Доступно обновление: " + version +
                         "\nТекущая версия: " + UpdateManager.getInstance().getCurrentVersion());
+                    // Показываем диалог только если есть обновление
                 });
             }
 
@@ -378,8 +377,5 @@ public class StartScreen implements Screen {
     public void dispose() {
         stage.dispose();
         backgroundTexture.dispose();
-        if (refreshIconTexture != null) {
-            refreshIconTexture.dispose();
-        }
     }
 }
