@@ -34,11 +34,11 @@ public class LightningChainAbility extends Ability {
      */
     public LightningChainAbility() {
         super("Lightning Chain",
-              "Strikes the nearest enemy with lightning and jumps to nearby enemies.\n" +
-              "Level 2: Increased damage and reduced cooldown.\n" +
-              "Level 3: Lightning jumps to one more target.\n" +
-              "Level 4: Significantly increased damage and chain range.\n" +
-              "Level 5: Maximum number of jumps increased to 5.",
+            "Поражает ближайшего врага молнией, которая перескакивает на соседних врагов.\n" +
+                "Уровень 2: Увеличивает урон и снижает перезарядку.\n" +
+                "Уровень 3: Молния перескакивает ещё на одну цель.\n" +
+                "Уровень 4: Значительно увеличивает урон и дальность цепи.\n" +
+                "Уровень 5: Максимальное количество перескоков увеличивается до 5.",
               "abilities/lightning.png",
               5.0f,    // Кулдаун
               400f);   // Увеличен радиус действия

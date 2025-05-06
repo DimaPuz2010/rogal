@@ -26,23 +26,23 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
     private float damageAmount = 8f;          // Базовый урон от ауры
     private float slowAmount = 30f;           // Замедление в процентах (30%)
     private float slowDuration = 1.5f;        // Длительность замедления после выхода из ауры
-    private float effectDuration = 0f;        // Длительность действия ауры
-    private float effectFrequency = 0.5f;     // Частота нанесения урона (раз в 0.5 сек)
+    private final float effectDuration = 0f;        // Длительность действия ауры
+    private final float effectFrequency = 0.5f;     // Частота нанесения урона (раз в 0.5 сек)
     private float effectTimer = 0f;           // Таймер для эффекта
 
     private FrostAuraVisual auraVisual;       // Визуальный эффект ауры
-    private Array<SlowEffect> activeSlowEffects = new Array<>();  // Активные эффекты замедления
+    private final Array<SlowEffect> activeSlowEffects = new Array<>();  // Активные эффекты замедления
 
     /**
      * Конструктор способности Ледяной Ауры
      */
     public FrostAuraAbility() {
         super("Frost Aura",
-              "Creates a freezing aura around the player that slows enemies and deals damage.\n" +
-              "Level 2: Increased damage and slow effect.\n" +
-              "Level 3: Larger area of effect and reduced cooldown.\n" +
-              "Level 4: Significantly increased damage and slow duration.\n" +
-              "Level 5: Greatly increased damage and freezes enemies completely for short time.",
+            "Создаёт ледяную ауру вокруг игрока, которая замедляет врагов и наносит им урон.\n" +
+                "Уровень 2: Увеличивает урон и эффект замедления.\n" +
+                "Уровень 3: Расширяет область действия и снижает перезарядку.\n" +
+                "Уровень 4: Значительно увеличивает урон и длительность замедления.\n" +
+                "Уровень 5: Существенно увеличивает урон и полностью замораживает врагов на короткое время.",
               "abilities/frost_aura.png",
               12f,    // Кулдаун
               130f,   // Радиус действия
@@ -407,8 +407,8 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         private final TextureRegion texture;
         private float lifetime;
         private final EnemyActor target;
-        private float scale;
-        private float alpha;
+        private final float scale;
+        private final float alpha;
 
         public FrostParticle(EnemyActor target) {
             this.target = target;

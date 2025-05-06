@@ -9,13 +9,13 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.utils.Array;
 
+import java.util.HashMap;
+
 import ru.myitschool.rogal.Abilities.AbilityType;
 import ru.myitschool.rogal.Abilities.AreaOfEffectAbility;
 import ru.myitschool.rogal.Actors.EnemyActor;
 import ru.myitschool.rogal.Actors.PlayerActor;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
-
-import java.util.HashMap;
 
 /**
  * Способность "Исцеляющая аура" - базовая лечащая способность
@@ -29,9 +29,9 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
     private boolean reducesDebuffs = false; // Снижает ли отрицательные эффекты (открывается на 3 уровне)
     private boolean boostsSpeed = false;   // Повышает ли скорость движения (открывается на 5 уровне)
     private float speedBoostPercent = 20f; // Процент увеличения скорости
-    private float speedBoostDuration = 3.0f;    // Увеличена длительность увеличения скорости
-    private float debuffReductionPercent = 30f; // Увеличен процент снижения длительности дебаффов
-    
+    private final float speedBoostDuration = 3.0f;    // Увеличена длительность увеличения скорости
+    private final float debuffReductionPercent = 30f; // Увеличен процент снижения длительности дебаффов
+
     // Отслеживание активных бустов
     private float speedBoostTimer = 0f;
     private boolean speedBoostActive = false;
@@ -45,21 +45,21 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
 
     // Ссылка на визуальный эффект ауры
     private HealingAuraVisual auraVisual;
-    
+
     // Визуальные эффекты бустов
-    private Array<SpeedBoostParticle> speedParticles = new Array<>();
-    private Array<DebuffReductionParticle> debuffParticles = new Array<>();
+    private final Array<SpeedBoostParticle> speedParticles = new Array<>();
+    private final Array<DebuffReductionParticle> debuffParticles = new Array<>();
 
     /**
      * Конструктор способности ауры исцеления
      */
     public HealingAuraAbility() {
         super("Healing Aura",
-                "Creates a healing aura around the player that heals over time and damages enemies.\n" +
-                        "Level 2: Increased healing and damage. Reduced cooldown.\n" +
-                        "Level 3: Increased area of effect and healing amount.\n" +
-                        "Level 4: Significantly increased healing power and reduced cooldown.\n" +
-                        "Level 5: Greatly increased healing, damage and area of effect.",
+            "Создаёт лечащую ауру вокруг игрока, которая восстанавливает здоровье и наносит урон врагам.\n" +
+                "Уровень 2: Увеличивает лечение и урон. Снижает перезарядку.\n" +
+                "Уровень 3: Увеличивает область действия и количество лечения.\n" +
+                "Уровень 4: Значительно увеличивает силу лечения и снижает перезарядку.\n" +
+                "Уровень 5: Существенно увеличивает лечение, урон и область действия.",
                 "abilities/healing_aura_effect.png",
                 14f,     // Слегка уменьшенный кулдаун
                 180f,    // Увеличенный радиус действия
@@ -101,10 +101,10 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
 
         // Очищаем предыдущие частицы
         clearParticles();
-        
+
         // Сохраняем исходную скорость игрока для использования в буфах
         if (owner instanceof PlayerActor) {
-            PlayerActor player = (PlayerActor) owner;
+            PlayerActor player = owner;
             baseSpeed = player.getSpeed();
         }
 
@@ -122,7 +122,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             }
         }
         speedParticles.clear();
-        
+
         for (DebuffReductionParticle particle : debuffParticles) {
             if (particle.getStage() != null) {
                 particle.remove();
@@ -155,12 +155,12 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
 
         updateSpeedBoost(delta);
         updateDebuffReduction(delta);
-        
+
         updateParticles(delta);
 
         applyEffect(delta);
     }
-    
+
     /**
      * Обновляет частицы эффектов
      * @param delta время между кадрами
@@ -172,14 +172,14 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                 speedParticles.removeIndex(i);
             }
         }
-        
+
         for (int i = debuffParticles.size - 1; i >= 0; i--) {
             DebuffReductionParticle particle = debuffParticles.get(i);
             if (particle.getStage() == null) {
                 debuffParticles.removeIndex(i);
             }
         }
-        
+
         if (speedBoostActive && owner.getStage() != null) {
             if (Math.random() < 0.1) {
                 SpeedBoostParticle particle = new SpeedBoostParticle(owner);
@@ -187,7 +187,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                 speedParticles.add(particle);
             }
         }
-        
+
         if (reducesDebuffs && !activeDebuffsReduction.isEmpty() && owner.getStage() != null) {
             if (Math.random() < 0.1) {
                 DebuffReductionParticle particle = new DebuffReductionParticle(owner);
@@ -204,7 +204,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
     private void updateSpeedBoost(float delta) {
         if (speedBoostActive) {
             speedBoostTimer -= delta;
-            
+
             if (speedBoostTimer <= 0) {
                 // Время действия буфа закончилось
                 speedBoostActive = false;
@@ -213,18 +213,18 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             }
         }
     }
-    
+
     /**
      * Сбрасывает скорость игрока к базовому значению
      */
     private void resetPlayerSpeed() {
         if (owner instanceof PlayerActor) {
-            PlayerActor player = (PlayerActor) owner;
+            PlayerActor player = owner;
             player.setSpeed(baseSpeed);
             LogHelper.log("HealingAuraAbility", "Player speed reset to " + baseSpeed);
         }
     }
-    
+
     /**
      * Обновление эффекта снижения дебаффов
      * @param delta время между кадрами
@@ -232,16 +232,16 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
     private void updateDebuffReduction(float delta) {
         if (reducesDebuffs) {
             debuffCheckTimer -= delta;
-            
+
             if (debuffCheckTimer <= 0) {
                 debuffCheckTimer = DEBUFF_CHECK_INTERVAL;
-                
+
                 // Проверяем и уменьшаем активные дебаффы
                 processActiveDebuffs();
             }
         }
     }
-    
+
     /**
      * Обрабатывает активные дебаффы игрока
      */
@@ -249,20 +249,20 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
         if (owner instanceof PlayerActor) {
             // Здесь предполагаем, что у PlayerActor есть метод getActiveDebuffs()
             HashMap<String, Float> playerDebuffs = getPlayerDebuffs();
-            
+
             // Очищаем наши записи о дебаффах, которые уже не активны
             activeDebuffsReduction.keySet().removeIf(debuffId -> !playerDebuffs.containsKey(debuffId));
-            
+
             // Обрабатываем текущие дебаффы игрока
             for (String debuffId : playerDebuffs.keySet()) {
                 if (!activeDebuffsReduction.containsKey(debuffId)) {
                     // Это новый дебафф, уменьшаем его длительность
                     float originalDuration = playerDebuffs.get(debuffId);
                     float reduction = originalDuration * (debuffReductionPercent / 100f);
-                    
+
                     // Записываем, сколько мы уменьшили для этого дебаффа
                     activeDebuffsReduction.put(debuffId, reduction);
-                    
+
                     // Уменьшаем длительность дебаффа
                     reduceDebuffDuration(debuffId, reduction);
                     LogHelper.log("HealingAuraAbility", "Reduced debuff " + debuffId + " duration by " + reduction + " seconds");
@@ -270,18 +270,18 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             }
         }
     }
-    
+
     /**
      * Получает все активные дебаффы игрока
      * @return карта дебаффов с их оставшейся длительностью
      */
     private HashMap<String, Float> getPlayerDebuffs() {
         if (owner instanceof PlayerActor) {
-            return ((PlayerActor) owner).getActiveDebuffs();
+            return owner.getActiveDebuffs();
         }
         return new HashMap<>();
     }
-    
+
     /**
      * Уменьшает длительность дебаффа игрока
      * @param debuffId идентификатор дебаффа
@@ -289,7 +289,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
      */
     private void reduceDebuffDuration(String debuffId, float reduction) {
         if (owner instanceof PlayerActor) {
-            ((PlayerActor) owner).reduceDebuffDuration(debuffId, reduction);
+            owner.reduceDebuffDuration(debuffId, reduction);
         }
     }
 
@@ -365,49 +365,49 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             }
         }
     }
-    
+
     /**
      * Применяет буст скорости к игроку
      */
     private void applySpeedBoost() {
         if (owner instanceof PlayerActor) {
-            PlayerActor player = (PlayerActor) owner;
+            PlayerActor player = owner;
             // Устанавливаем флаг активного буста
             speedBoostActive = true;
             speedBoostTimer = speedBoostDuration;
-            
+
             // Сохраняем базовую скорость и вычисляем буст
             baseSpeed = player.getSpeed();
             boostedSpeed = baseSpeed * (1 + speedBoostPercent/100f);
-            
+
             // Применяем буст
             player.setSpeed(boostedSpeed);
-            
+
             LogHelper.log("HealingAuraAbility", "Speed boost applied: " + baseSpeed + " -> " + boostedSpeed);
         }
     }
-    
+
     /**
      * Немедленно очищает все дебаффы игрока
      */
     public void clearAllDebuffs() {
         if (owner instanceof PlayerActor && level >= 5) {
-            int clearedCount = ((PlayerActor) owner).clearAllDebuffs();
+            int clearedCount = owner.clearAllDebuffs();
             if (clearedCount > 0) {
                 LogHelper.log("HealingAuraAbility", "Cleared " + clearedCount + " debuffs from player");
-                
+
                 // Добавляем визуальный эффект очистки дебаффов
                 addDebuffClearingEffect();
             }
         }
     }
-    
+
     /**
      * Добавляет визуальный эффект очистки дебаффов
      */
     private void addDebuffClearingEffect() {
         if (owner == null || owner.getStage() == null) return;
-        
+
         for (int i = 0; i < 10; i++) {
             DebuffReductionParticle particle = new DebuffReductionParticle(owner);
             owner.getStage().addActor(particle);
@@ -486,7 +486,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             this.alpha = alpha;
         }
     }
-    
+
     /**
      * Класс для отображения частиц увеличения скорости
      */
@@ -494,22 +494,22 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
         private final TextureRegion texture;
         private float lifetime;
         private float angle;
-        private float speed;
-        private float baseAlpha;
-        
+        private final float speed;
+        private final float baseAlpha;
+
         public SpeedBoostParticle(Actor target) {
             Texture tex = new Texture(Gdx.files.internal(effectTexturePath));
             this.texture = new TextureRegion(tex);
-            
-            
+
+
             lifetime = 0.3f + (float)Math.random() * 0.7f;
             angle = (float)(Math.random() * Math.PI * 2);
             speed = 10f + (float)Math.random() * 20f;
             baseAlpha = 0.3f + (float)Math.random() * 0.5f;
-            
+
             float offsetX = (float)Math.cos(angle) * 5f;
             float offsetY = (float)Math.sin(angle) * 5f;
-            
+
             setWidth(10);
             setHeight(10);
             setPosition(
@@ -517,14 +517,14 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                 target.getY() + target.getHeight()/2 + offsetY - getHeight()/2
             );
             setOrigin(getWidth()/2, getHeight()/2);
-            
+
             setScale(0.5f);
             addAction(Actions.scaleTo(1.5f, 1.5f, lifetime));
         }
-        
+
         @Override
         public void draw(Batch batch, float parentAlpha) {
-            float alpha = baseAlpha * parentAlpha * (lifetime / 1f);
+            float alpha = baseAlpha * parentAlpha * (lifetime);
             batch.setColor(0.6f, 0.9f, 1.0f, alpha);
             batch.draw(
                 texture,
@@ -540,48 +540,49 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             );
             batch.setColor(1f, 1f, 1f, 1f);
         }
-        
+
         @Override
         public void act(float delta) {
             super.act(delta);
-            
+
             lifetime -= delta;
             if (lifetime <= 0) {
                 remove();
                 return;
             }
-            
+
             // Движение частицы
             float moveX = (float)Math.cos(angle) * speed * delta;
             float moveY = (float)Math.sin(angle) * speed * delta;
             moveBy(moveX, moveY);
-            
+
             // Вращение
             angle += delta;
         }
     }
-    
+
     /**
      * Класс для отображения частиц снижения дебаффов
      */
     private class DebuffReductionParticle extends Actor {
         private final TextureRegion texture;
         private float lifetime;
-        private Actor target;
-        private float offsetX, offsetY;
-        private float alpha;
-        
+        private final Actor target;
+        private final float offsetX;
+        private final float offsetY;
+        private final float alpha;
+
         public DebuffReductionParticle(Actor target) {
             Texture tex = new Texture(Gdx.files.internal(effectTexturePath));
             this.texture = new TextureRegion(tex);
-            
+
             this.target = target;
-            
+
             lifetime = 0.5f + (float)Math.random() * 0.5f;
             offsetX = (float)(Math.random() * target.getWidth()) - target.getWidth()/2;
             offsetY = (float)(Math.random() * target.getHeight()) - target.getHeight()/2;
             alpha = 0.3f + (float)Math.random() * 0.4f;
-            
+
             setWidth(15);
             setHeight(15);
             setPosition(
@@ -589,7 +590,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                 target.getY() + target.getHeight()/2 + offsetY - getHeight()/2
             );
             setOrigin(getWidth()/2, getHeight()/2);
-            
+
             setScale(0.1f);
             addAction(Actions.sequence(
                 Actions.scaleTo(1.5f, 1.5f, 0.3f),
@@ -597,7 +598,7 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                 Actions.removeActor()
             ));
         }
-        
+
         @Override
         public void draw(Batch batch, float parentAlpha) {
             batch.setColor(0.8f, 0.2f, 0.8f, alpha * parentAlpha);
@@ -615,17 +616,17 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             );
             batch.setColor(1f, 1f, 1f, 1f);
         }
-        
+
         @Override
         public void act(float delta) {
             super.act(delta);
-            
+
             // Следуем за целью
             setPosition(
                 target.getX() + target.getWidth()/2 + offsetX - getWidth()/2,
                 target.getY() + target.getHeight()/2 + offsetY - getHeight()/2
             );
-            
+
             // Уменьшаем время жизни
             lifetime -= delta;
             if (lifetime <= 0) {

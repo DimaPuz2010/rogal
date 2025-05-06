@@ -31,9 +31,9 @@ public class EnergyBullet extends Ability {
     private final float projectileSpreadAngle = 15f; // Угол разброса между пулями в градусах
 
     public EnergyBullet() {
-        super("Energy Bullet", "Creates an energy projectile that automatically flies towards an enemy and deals damage\n" +
-              "Level 3: Fires 2 projectiles\n" +
-              "Level 5: Fires 3 projectiles",
+        super("Energy Bullet", "Создаёт энергетический снаряд, который автоматически летит к врагу и наносит урон\n" +
+                "Уровень 3: Выпускает 2 снаряда\n" +
+                "Уровень 5: Выпускает 3 снаряда",
               "abilities/fireball.png", 1.0f, 500f);
 
         this.abilityType = AbilityType.ATTACK;
