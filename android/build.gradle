@@ -1,4 +1,3 @@
-
 buildscript {
   repositories {
     mavenCentral()
@@ -72,6 +71,8 @@ dependencies {
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
 
+  // Добавляем поддержку FileProvider
+  implementation 'androidx.core:core:1.7.0'
 }
 
 // Called every time gradle gets executed, takes the native dependencies of

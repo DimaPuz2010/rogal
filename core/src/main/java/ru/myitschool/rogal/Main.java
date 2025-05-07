@@ -17,26 +17,21 @@ public class Main extends Game {
     public static final int SCREEN_WIDTH = 1280;
     public static final int SCREEN_HEIGHT = 720;
 
-    public static String VERSION = "1.0.7";
+    public static String VERSION;
 
     @Override
     public void create() {
 
-        // Загружаем версию из gradle.properties
         loadVersion();
 
-        // Инициализация ресурсов
         FontManager.initialize();
 
-        // Инициализация данных игрока
         PlayerData.initialize();
 
-        // Инициализация API таблицы лидеров
         LeaderboardAPI.initialize();
 
-        // Инициализация системы обновлений
+        UpdateManager.getInstance().applyPendingUpdateIfExists();
         UpdateManager.getInstance().checkForUpdates();
-
         // Переход на начальный экран
         setScreen(new StartScreen(this));
 
