@@ -41,7 +41,6 @@ public class EnergyBullet extends Ability {
         this.cooldown = 0.8f;
         this.range = 550f;
 
-        // Загружаем иконку для отображения в UI
         try {
             if (Gdx.files.internal("abilities/fireball.png").exists()) {
                 this.icon = new Texture(Gdx.files.internal("abilities/fireball.png"));
@@ -58,10 +57,8 @@ public class EnergyBullet extends Ability {
     public void update(float delta) {
         super.update(delta);
 
-        // Обновляем таймер автоматической активации
         timeSinceLastActivation += delta;
 
-        // Проверяем, нужно ли активировать способность
         if (timeSinceLastActivation >= autoActivateInterval) {
             timeSinceLastActivation = 0f;
             tryAutoActivate();
@@ -75,19 +72,15 @@ public class EnergyBullet extends Ability {
             return false;
         }
 
-        // Получаем позицию игрока
         Vector2 startPos = new Vector2(owner.getX() + owner.getOriginX(),
                                      owner.getY() + owner.getOriginY());
 
-        // Вычисляем базовое направление выстрела
         Vector2 baseDirection = new Vector2(position).sub(startPos).nor();
 
         try {
-            // Создаем нужное количество снарядов с учетом угла разброса
             for (int i = 0; i < projectileCount; i++) {
                 float angleOffset = 0;
 
-                // Рассчитываем угол смещения для каждой пули
                 if (projectileCount > 1) {
                     if (projectileCount == 2) {
                         angleOffset = (i == 0) ? -projectileSpreadAngle/2 : projectileSpreadAngle/2;
@@ -96,17 +89,14 @@ public class EnergyBullet extends Ability {
                     }
                 }
 
-                // Создаем новый вектор направления с учетом смещения угла
                 Vector2 projectileDirection = new Vector2(baseDirection);
                 projectileDirection.rotateDeg(angleOffset);
 
-                // Вычисляем целевую позицию для этого направления
                 Vector2 targetPos = new Vector2(startPos).add(
                     projectileDirection.x * range,
                     projectileDirection.y * range
                 );
 
-                // Создаем и добавляем снаряд
                 BulletProjectile projectile = new BulletProjectile(
                     startPos,
                     targetPos,
@@ -137,7 +127,6 @@ public class EnergyBullet extends Ability {
         projectileDamage += 2.5f;
         projectileCount += 1;
 
-        // Увеличиваем количество пуль на определенных уровнях
         if (level == 3) {
             projectileCount += 2;
             projectileDamage += 5;
@@ -159,7 +148,6 @@ public class EnergyBullet extends Ability {
         Array<Actor> actors = stage.getActors();
         Array<EnemyActor> enemies = new Array<>();
 
-        // Собираем всех живых врагов
         for (Actor actor : actors) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
@@ -197,7 +185,6 @@ public class EnergyBullet extends Ability {
     protected void tryAutoActivate() {
         if (owner == null) return;
 
-        // Проверяем, есть ли враги на сцене
         Stage stage = owner.getStage();
         boolean enemiesExist = false;
 
@@ -215,13 +202,11 @@ public class EnergyBullet extends Ability {
             return;
         }
 
-        // Проверяем, хватает ли энергии
         if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
             LogHelper.debug("EnergyBullet", "Not enough energy");
             return;
         }
 
-        // Находим позицию ближайшего врага
         Vector2 targetPosition = findTargetPosition();
 
         if (targetPosition != null) {
@@ -255,27 +240,22 @@ public class EnergyBullet extends Ability {
             this.maxLifespan = lifespan;
             this.lifespan = lifespan;
 
-            // Загружаем текстуру снаряда
             projectileTexture = new Texture(Gdx.files.internal(projectileTexturePath));
             this.texture = new TextureRegion(projectileTexture);
 
-            // Настраиваем размеры и позицию
             setWidth(texture.getRegionWidth() * projectileSize);
             setHeight(texture.getRegionHeight() * projectileSize);
             setPosition(position.x - getWidth()/2, position.y - getHeight()/2);
             setOrigin(getWidth()/2, getHeight()/2);
 
-            // Рассчитываем начальное направление
             this.direction = new Vector2(target).sub(position).nor();
             float angle = Vector2Helpers.getRotationByVector(direction.x, direction.y);
             setRotation(angle);
 
-            // Создаем хитбокс
             hitbox = HitboxHelper.createCircleHitbox(getWidth()/2, 8);
             hitbox.setOrigin(getWidth()/2, getHeight()/2);
             updateHitbox();
 
-            // Находим цель для отслеживания
             findTarget();
         }
 
@@ -289,20 +269,17 @@ public class EnergyBullet extends Ability {
         public void act(float delta) {
             super.act(delta);
 
-            // Уменьшаем время жизни
             lifespan -= delta;
             if (lifespan <= 0) {
                 remove();
                 return;
             }
 
-            // Анимация уменьшения размера
             if (lifespan < maxLifespan * 0.2f) {
                 float scale = lifespan / (maxLifespan * 0.2f);
                 setScale(scale);
             }
 
-            // Отслеживание цели
             if (targetEnemy != null && targetEnemy.getStage() != null) {
                 if (targetEnemy.getCurrentHealth() <= 0) {
                     targetEnemy = null;
@@ -313,7 +290,6 @@ public class EnergyBullet extends Ability {
                                                  targetEnemy.getY() + targetEnemy.getOriginY());
                     Vector2 newDirection = new Vector2(enemyPos).sub(projectilePos).nor();
 
-                    // Плавный поворот к цели
                     direction.lerp(newDirection, delta * turnSpeed);
                     direction.nor();
 
@@ -324,11 +300,9 @@ public class EnergyBullet extends Ability {
                 findTarget();
             }
 
-            // Движение снаряда
             moveBy(direction.x * speed, direction.y * speed);
             updateHitbox();
 
-            // Проверка коллизий
             checkCollisions();
         }
 

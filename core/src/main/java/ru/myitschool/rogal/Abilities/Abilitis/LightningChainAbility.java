@@ -40,13 +40,12 @@ public class LightningChainAbility extends Ability {
                 "Уровень 4: Значительно увеличивает урон и дальность цепи.\n" +
                 "Уровень 5: Максимальное количество перескоков увеличивается до 5.",
               "abilities/lightning.png",
-              5.0f,    // Кулдаун
-              400f);   // Увеличен радиус действия
+            5.0f,
+            400f);
 
         this.abilityType = AbilityType.ATTACK;
         this.energyCost = 20f;
 
-        // Загружаем иконку способности
         try {
             if (Gdx.files.internal("abilities/lightning.png").exists()) {
                 this.icon = new Texture(Gdx.files.internal("abilities/lightning.png"));
@@ -66,11 +65,9 @@ public class LightningChainAbility extends Ability {
             return false;
         }
 
-        // Получаем позицию игрока
         Vector2 playerPos = new Vector2(owner.getX() + owner.getOriginX(),
                                         owner.getY() + owner.getOriginY());
 
-        // Находим ближайшего врага
         EnemyActor firstTarget = findNearestEnemy(playerPos, range);
 
         if (firstTarget == null) {
@@ -78,24 +75,19 @@ public class LightningChainAbility extends Ability {
             return false;
         }
 
-        // Создаем список уже пораженных врагов, чтобы не бить дважды
         Array<EnemyActor> hitEnemies = new Array<>();
 
-        // Наносим урон и создаем эффект для первой цели
         Vector2 targetPos = new Vector2(firstTarget.getX() + firstTarget.getOriginX(),
                                         firstTarget.getY() + firstTarget.getOriginY());
 
-        // Добавляем визуальный эффект молнии от игрока к первой цели
         LightningEffect effect = new LightningEffect(playerPos, targetPos);
         owner.getStage().addActor(effect);
 
-        // Наносим урон первой цели
         firstTarget.takeDamage(Math.round(damageAmount));
         hitEnemies.add(firstTarget);
 
         LogHelper.log("LightningChainAbility", "Primary target hit for " + Math.round(damageAmount) + " damage");
 
-        // Находим другие цели для перескока молнии
         chainLightning(firstTarget, hitEnemies, 1, damageAmount * damageFalloff);
 
         return true;
@@ -110,32 +102,25 @@ public class LightningChainAbility extends Ability {
      */
     private void chainLightning(EnemyActor currentTarget, Array<EnemyActor> hitEnemies,
                                 int currentJump, float currentDamage) {
-        // Если достигли максимального количества прыжков, останавливаемся
         if (currentJump >= maxJumps || owner == null || owner.getStage() == null) {
             return;
         }
 
-        // Позиция текущей цели
         Vector2 currentPos = new Vector2(currentTarget.getX() + currentTarget.getOriginX(),
                                         currentTarget.getY() + currentTarget.getOriginY());
 
-        // Находим следующую ближайшую цель, которая еще не была поражена
         EnemyActor nextTarget = findNearestEnemyExcluding(currentPos, chainRange, hitEnemies);
 
         if (nextTarget == null) {
-            // Нет подходящих целей для дальнейшего перескока
             return;
         }
 
-        // Позиция следующей цели
         Vector2 nextPos = new Vector2(nextTarget.getX() + nextTarget.getOriginX(),
                                     nextTarget.getY() + nextTarget.getOriginY());
 
-        // Создаем эффект молнии между целями
         LightningEffect effect = new LightningEffect(currentPos, nextPos);
         owner.getStage().addActor(effect);
 
-        // Наносим урон следующей цели
         int damage = Math.round(currentDamage);
         nextTarget.takeDamage(damage);
         hitEnemies.add(nextTarget);
@@ -160,7 +145,6 @@ public class LightningChainAbility extends Ability {
         EnemyActor nearestEnemy = null;
         float minDistance = Float.MAX_VALUE;
 
-        // Перебираем всех акторов на сцене
         for (Actor actor : stage.getActors()) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
@@ -193,7 +177,6 @@ public class LightningChainAbility extends Ability {
         EnemyActor nearestEnemy = null;
         float minDistance = Float.MAX_VALUE;
 
-        // Перебираем всех акторов на сцене
         for (Actor actor : stage.getActors()) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
@@ -218,7 +201,6 @@ public class LightningChainAbility extends Ability {
 
     @Override
     protected void updateActive(float delta) {
-        // Способность мгновенная, не имеет активного состояния
         isActive = false;
     }
 
@@ -229,25 +211,25 @@ public class LightningChainAbility extends Ability {
     protected void onLevelUp() {
         switch (level) {
             case 2:
-                damageAmount += 10f;       // Увеличиваем урон
-                cooldown -= 0.5f;          // Уменьшаем кулдаун
+                damageAmount += 10f;
+                cooldown -= 0.5f;
                 LogHelper.log("LightningChainAbility", "Level 2: Damage increased, cooldown reduced");
                 break;
             case 3:
-                maxJumps += 1;             // Добавляем дополнительный перескок
-                chainRange += 40f;         // Увеличиваем дальность перескока
+                maxJumps += 1;
+                chainRange += 40f;
                 LogHelper.log("LightningChainAbility", "Level 3: Added extra jump, increased chain range");
                 break;
             case 4:
-                damageAmount += 15f;       // Значительно увеличиваем урон
-                chainRange += 60f;         // Увеличиваем дальность перескока
-                cooldown -= 0.5f;          // Уменьшаем кулдаун
+                damageAmount += 15f;
+                chainRange += 60f;
+                cooldown -= 0.5f;
                 LogHelper.log("LightningChainAbility", "Level 4: Significantly increased damage and chain range");
                 break;
             case 5:
-                maxJumps = 5;              // Устанавливаем максимальное количество перескоков
-                damageAmount += 10f;       // Увеличиваем урон
-                damageFalloff = 0.8f;      // Улучшаем сохранение урона при перескоке
+                maxJumps = 5;
+                damageAmount += 10f;
+                damageFalloff = 0.8f;
                 LogHelper.log("LightningChainAbility", "Level 5: Maximum jumps increased to 5, damage increased");
                 break;
         }
@@ -257,7 +239,6 @@ public class LightningChainAbility extends Ability {
         if (!autoUse || currentCooldown > 0) return;
         if (owner == null || owner.getStage() == null) return;
 
-        // Проверяем наличие врагов на сцене
         boolean enemiesExist = false;
         for (Actor actor : owner.getStage().getActors()) {
             if (actor instanceof EnemyActor) {
@@ -270,16 +251,13 @@ public class LightningChainAbility extends Ability {
             return;
         }
 
-        // Проверяем, хватит ли энергии на активацию
         if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
             return;
         }
 
-        // Получаем позицию игрока для использования как позиции активации
         Vector2 playerPos = new Vector2(owner.getX() + owner.getOriginX(),
                                         owner.getY() + owner.getOriginY());
 
-        // Активируем способность
         activate(playerPos);
     }
 
@@ -306,7 +284,6 @@ public class LightningChainAbility extends Ability {
             this.start.set(start);
             this.end.set(end);
 
-            // Загружаем текстуру молнии
             try {
                 this.texture = new TextureRegion(new Texture(Gdx.files.internal(lightningTexturePath)));
             } catch (Exception e) {
@@ -314,24 +291,20 @@ public class LightningChainAbility extends Ability {
                 throw new RuntimeException("Failed to load lightning texture", e);
             }
 
-            // Инициализируем промежуточные точки для сегментов молнии
             points = new Vector2[segments + 1];
             for (int i = 0; i <= segments; i++) {
                 points[i] = new Vector2();
             }
 
-            // Генерируем начальные точки
             generateLightningPoints();
 
-            // Устанавливаем размеры актора
             float width = end.dst(start);
-            float height = 20f;  // Толщина молнии
+            float height = 20f;
 
             setWidth(width);
             setHeight(height);
             setPosition(start.x, start.y - height/2);
 
-            // Добавляем действие исчезновения
             addAction(Actions.sequence(
                 Actions.delay(duration * 0.8f),
                 Actions.fadeOut(duration * 0.2f),
@@ -349,23 +322,18 @@ public class LightningChainAbility extends Ability {
             for (int i = 1; i < segments; i++) {
                 float t = (float) i / segments;
 
-                // Интерполяция между начальной и конечной точками
                 float x = start.x + (end.x - start.x) * t;
                 float y = start.y + (end.y - start.y) * t;
 
-                // Добавляем случайное смещение, перпендикулярное к линии
                 float dx = end.x - start.x;
                 float dy = end.y - start.y;
                 float length = (float) Math.sqrt(dx * dx + dy * dy);
 
-                // Если длина слишком маленькая, пропускаем расчет
                 if (length < 0.01f) continue;
 
-                // Единичный вектор, перпендикулярный к линии
                 float nx = -dy / length;
                 float ny = dx / length;
 
-                // Случайное смещение
                 float offset = MathUtils.random(-jitterAmount, jitterAmount);
                 x += nx * offset;
                 y += ny * offset;
@@ -379,7 +347,6 @@ public class LightningChainAbility extends Ability {
             Color color = getColor();
             batch.setColor(color.r, color.g, color.b, color.a * parentAlpha);
 
-            // Рисуем сегменты молнии
             for (int i = 0; i < segments; i++) {
                 Vector2 p1 = points[i];
                 Vector2 p2 = points[i+1];
@@ -404,8 +371,6 @@ public class LightningChainAbility extends Ability {
         public void act(float delta) {
             super.act(delta);
 
-
-            // Периодически изменяем форму молнии для эффекта мерцания
             jitterTimer += delta;
             if (jitterTimer >= jitterFrequency) {
                 jitterTimer = 0;

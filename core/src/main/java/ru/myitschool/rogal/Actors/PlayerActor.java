@@ -70,7 +70,7 @@ public class PlayerActor extends Actor {
     private final Random random = new Random();
 
     // Время неуязвимости после получения урона
-    private float invulnerabilityTime = 0f;
+    private float invulnerabilityTime = 0.2f;
     private static final float MAX_INVULNERABILITY_TIME = 0.6f;
 
     // Константы для прокачки персонажа
@@ -109,11 +109,6 @@ public class PlayerActor extends Actor {
     private final HashMap<String, PlayerDebuff> activeDebuffs = new HashMap<>();
     // Обработчик смерти
     private DeathHandler deathHandler;
-
-    /**
-     * Типы дебаффов
-     */
-
 
     public PlayerActor(final String texturePath, final Touchpad touchpad) {
         Texture tex = new Texture(texturePath);
@@ -166,10 +161,8 @@ public class PlayerActor extends Actor {
     public void act(final float delta) {
         super.act(delta);
 
-        // Увеличиваем счетчик времени игры
         gameTime += delta;
 
-        // Проверяем, открыт ли экран выбора способности
         boolean isAbilitySelectionActive = false;
         if (gameUI != null) {
             Main game = (Main) Gdx.app.getApplicationListener();
@@ -185,7 +178,6 @@ public class PlayerActor extends Actor {
                 // Режим управления касанием
                 // Если есть активная цель для движения
                 if (isMovingToTarget) {
-                    // Вычисляем вектор движения к цели
                     float dx = touchTarget.x - (getX() + getOriginX());
                     float dy = touchTarget.y - (getY() + getOriginY());
                     float distance = (float) Math.sqrt(dx * dx + dy * dy);
@@ -194,14 +186,12 @@ public class PlayerActor extends Actor {
                     if (distance < 5) {
                         isMovingToTarget = false;
                     } else {
-                        // Нормализуем вектор движения и умножаем на скорость
                         float moveX = dx / distance * SPEED;
                         float moveY = dy / distance * SPEED;
 
                         // Перемещаем игрока
                         moveBy(moveX, moveY);
 
-                        // Поворачиваем игрока в направлении движения
                         float angle = Vector2Helpers.getRotationByVector(moveX, moveY);
                         if (angle != 0) {
                             setRotation(angle);
@@ -230,30 +220,25 @@ public class PlayerActor extends Actor {
             }
         }
 
-        // Обновляем положение и поворот хитбокса
         hitbox.setPosition(getX(), getY());
         hitbox.setRotation(getRotation() + 90);
 
-        // Регенерация здоровья
         healthRegenCounter += delta;
         if (healthRegenCounter >= 1f) {
             regenerateHealth();
             healthRegenCounter = 0f;
         }
 
-        // Регенерация энергии
         energyRegenCounter += delta;
         if (energyRegenCounter >= 1f) {
             regenerateEnergy();
             energyRegenCounter = 0f;
         }
 
-        // Обновление таймера неуязвимости
         if (invulnerabilityTime > 0) {
             invulnerabilityTime -= delta;
         }
 
-        // Обновление таймера энергетической батареи
         if (energyBatteryActive) {
             energyBatteryTime -= delta;
             if (energyBatteryTime <= 0) {
@@ -262,12 +247,10 @@ public class PlayerActor extends Actor {
             }
         }
 
-        // Обновление дебаффов
         updateDebuffs(delta);
 
         checkOverlap();
 
-        // Обновление состояния способностей
         if (abilityManager != null) {
             abilityManager.update(delta);
         }
@@ -299,7 +282,7 @@ public class PlayerActor extends Actor {
         activeDebuffs.put(id, debuff);
         LogHelper.log("PlayerActor", "Added debuff " + name + " with duration " + duration);
 
-        // Применяем немедленный эффект дебаффа
+        // Применяем эффект дебаффа
         applyDebuffEffect(debuff, true);
 
         return true;
@@ -314,13 +297,11 @@ public class PlayerActor extends Actor {
             return;
         }
 
-        // Проверяем, есть ли уже способности
         if (abilityManager.getAbilities().size > 0) {
             LogHelper.log("PlayerActor", "Initial abilities already unlocked");
             return;
         }
 
-        // Генерируем список всех начальных способностей
         ArrayList<Ability> allInitialAbilities = new ArrayList<>();
         for (AbilityConstructor constructor : availableAbilities) {
             allInitialAbilities.add(constructor.create());
@@ -384,23 +365,19 @@ public class PlayerActor extends Actor {
      * @return true если урон был нанесен, false если персонаж неуязвим
      */
     public boolean takeDamage(int damage) {
-        // Если у игрока активна неуязвимость, не получает урона
         if (invulnerabilityTime > 0) {
             return false;
         }
 
-        // Запоминаем время получения урона
         lastDamageTime = gameTime;
 
         currentHealth -= damage;
         invulnerabilityTime = MAX_INVULNERABILITY_TIME;
 
-        // Активируем батарею энергии при получении урона
-        if (random.nextFloat() < 0.3f) { // 30% шанс
+        if (random.nextFloat() < 0.3f) {
             activateEnergyBattery();
         }
 
-        // Проверяем, жив ли еще игрок
         if (currentHealth <= 0) {
             currentHealth = 0;
             onDeath();
@@ -509,13 +486,10 @@ public class PlayerActor extends Actor {
         for (Ability ability : playerAbilities) {
             if (ability.getLevel() < MAX_ABILITY_LEVEL) {
                 try {
-                    // Создаем копию способности
                     Ability abilityCopy = ability.getClass().getDeclaredConstructor().newInstance();
 
-                    // Копируем текущий уровень из оригинальной способности
                     abilityCopy.setLevel(ability.getLevel());
 
-                    // Добавляем копию в список доступных для улучшения
                     upgradable.add(abilityCopy);
 
                     LogHelper.log("PlayerActor", "Добавлена для улучшения способность: " +
@@ -543,7 +517,6 @@ public class PlayerActor extends Actor {
         ArrayList<Ability> choices = generateRandomAbilityChoices(3);
 
         if (gameUI != null && !choices.isEmpty()) {
-            // Логгируем информацию о возможных выборах
             LogHelper.log("PlayerActor", "Предлагаются следующие способности (" + choices.size() + "):");
             for (Ability ability : choices) {
                 boolean isUpgrade = findAbilityIndex(ability) >= 0;
@@ -576,7 +549,6 @@ public class PlayerActor extends Actor {
     private int findAbilityIndex(Ability ability) {
         Array<Ability> playerAbilities = abilityManager.getAbilities();
         for (int i = 0; i < playerAbilities.size; i++) {
-            // Сравниваем по имени класса, т.к. это разные экземпляры
             if (playerAbilities.get(i).getClass().getName().equals(ability.getClass().getName())) {
                 return i;
             }
@@ -592,13 +564,10 @@ public class PlayerActor extends Actor {
     private ArrayList<Ability> generateRandomAbilityChoices(int count) {
         ArrayList<Ability> result = new ArrayList<>();
 
-        // Получаем способности, которые можно улучшить
         ArrayList<Ability> upgradableAbilities = getUpgradableAbilities();
 
-        // Получаем новые способности
         ArrayList<Ability> newAbilities = generateNewAbilities();
 
-        // Проверяем, сколько у нас уже есть способностей
         boolean allSlotsOccupied = abilityManager.getAbilityCount() >= AbilityManager.MAX_ABILITIES;
 
         ArrayList<Ability> allPossibleChoices = new ArrayList<>();
@@ -653,13 +622,10 @@ public class PlayerActor extends Actor {
         // Получаем текущие способности игрока
         Array<Ability> playerAbilities = abilityManager.getAbilities();
 
-        // Проверяем каждый доступный конструктор способности
         for (AbilityConstructor constructor : availableAbilities) {
-            // Создаем тестовый экземпляр для проверки
             Ability testAbility = constructor.create();
             boolean playerHasAbility = false;
 
-            // Проверяем, есть ли такая способность у игрока
             for (Ability playerAbility : playerAbilities) {
                 if (playerAbility.getClass().getName().equals(testAbility.getClass().getName())) {
                     playerHasAbility = true;
@@ -667,7 +633,6 @@ public class PlayerActor extends Actor {
                 }
             }
 
-            // Если у игрока нет такой способности, добавляем её в список новых
             if (!playerHasAbility) {
                 newAbilities.add(testAbility);
             }
@@ -682,7 +647,6 @@ public class PlayerActor extends Actor {
     private void onDeath() {
         LogHelper.log("PlayerActor", "Player died!");
 
-        // Вызываем обработчик смерти, если он установлен
         if (deathHandler != null) {
             deathHandler.onPlayerDeath();
         }
@@ -701,31 +665,25 @@ public class PlayerActor extends Actor {
         Stage stage = getStage();
         if (stage == null) return;
 
-        // Получаем всех акторов на сцене
         Array<Actor> actors = stage.getActors();
         Array<EnemyActor> enemiesToRemove = new Array<>();
 
-        // Проверяем столкновения с врагами
         for (int i = 0; i < actors.size; i++) {
             Actor actor = actors.get(i);
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
 
-                // Проверяем пересечение полигонов
                 boolean isOverlap = Intersector.overlapConvexPolygons(this.hitbox, enemy.getHitbox());
 
                 if (isOverlap) {
-                    // При столкновении наносим урон игроку
                     takeDamage(enemy.getCollisionDamage());
                     enemiesToRemove.add(enemy);
 
-                    // Для отладки выводим информацию в консоль
                     Gdx.app.debug("PlayerActor", "Collision detected with enemy");
                 }
             }
         }
 
-        // Удаляем врагов, с которыми произошло столкновение
         for (EnemyActor enemy : enemiesToRemove) {
             enemy.die();
         }
@@ -845,7 +803,6 @@ public class PlayerActor extends Actor {
      */
     private void regenerateEnergy() {
         if (currentEnergy < maxEnergy) {
-            // Применяем бонус от батареи энергии, если активна
             float actualRegen = energyRegeneration;
 
             if (energyBatteryActive) {
@@ -927,7 +884,6 @@ public class PlayerActor extends Actor {
         boolean success = abilityManager.activateAbility(abilityIndex, targetPosition);
 
         if (success) {
-            // Получаем название способности для логов
             Ability ability = abilityManager.getAbility(abilityIndex);
             if (ability != null) {
                 LogHelper.log("PlayerActor", "Used ability " + abilityIndex + ": " + ability.getName());
@@ -973,7 +929,6 @@ public class PlayerActor extends Actor {
      * @param speed новая скорость
      */
     public void setSpeed(float speed) {
-        // Ограничиваем максимальной скоростью
         SPEED = Math.min(speed, MAX_SPEED);
     }
 
@@ -990,23 +945,18 @@ public class PlayerActor extends Actor {
         Vector2 nearestEnemyPos = null;
         float minDistance = Float.MAX_VALUE;
 
-        // Получаем всех акторов на сцене
         Array<Actor> actors = stage.getActors();
 
-        // Ищем ближайшего врага
         for (int i = 0; i < actors.size; i++) {
             Actor actor = actors.get(i);
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
 
-                // Рассчитываем позицию врага
                 Vector2 enemyPos = new Vector2(enemy.getX() + enemy.getOriginX(),
                                              enemy.getY() + enemy.getOriginY());
 
-                // Вычисляем расстояние до врага
                 float distance = playerPos.dst(enemyPos);
 
-                // Если враг в пределах радиуса и ближе предыдущих найденных
                 if (distance <= searchRadius && distance < minDistance) {
                     minDistance = distance;
                     nearestEnemyPos = enemyPos;
@@ -1231,7 +1181,6 @@ public class PlayerActor extends Actor {
     private void applyPeriodicDebuffEffect(PlayerDebuff debuff, float delta) {
         switch (debuff.getType()) {
             case DAMAGE_OVER_TIME:
-                // Наносим урон со временем
                 float damagePerSecond = debuff.getEffectValue();
                 int damage = Math.round(damagePerSecond * delta);
                 if (damage > 0) {

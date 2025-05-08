@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
  * Класс для способностей, создающих летящие снаряды
  */
 public abstract class ProjectileAbility extends Ability {
-    
+
     // Параметры снаряда
     protected String projectileTexturePath;  // Путь к текстуре снаряда
     protected float projectileSpeed;         // Скорость снаряда
@@ -18,7 +18,7 @@ public abstract class ProjectileAbility extends Ability {
     protected int projectileCount = 1;       // Количество снарядов
     protected float projectileDamage;        // Базовый урон снаряда
     protected float projectileLifespan;      // Время жизни снаряда (в секундах)
-    
+
     /**
      * Конструктор для снарядной способности
      * @param name название способности
@@ -32,18 +32,18 @@ public abstract class ProjectileAbility extends Ability {
      * @param projectileDamage базовый урон от снаряда
      * @param projectileLifespan время жизни снаряда
      */
-    public ProjectileAbility(String name, String description, String iconPath, 
-                           float cooldown, float range, 
+    public ProjectileAbility(String name, String description, String iconPath,
+                             float cooldown, float range,
                            String projectileTexturePath, float projectileSpeed,
                            float projectileSize, float projectileDamage, float projectileLifespan) {
         super(name, description, iconPath, cooldown, range);
-        
+
         this.projectileTexturePath = projectileTexturePath;
         this.projectileSpeed = projectileSpeed;
         this.projectileSize = projectileSize;
         this.projectileDamage = projectileDamage;
         this.projectileLifespan = projectileLifespan;
-        
+
         // Загрузка иконки
         try {
             this.icon = new Texture(Gdx.files.internal(iconPath));
@@ -51,20 +51,20 @@ public abstract class ProjectileAbility extends Ability {
             Gdx.app.error("ProjectileAbility", "Не удалось загрузить иконку: " + iconPath);
         }
     }
-    
+
     @Override
     protected boolean use(Vector2 position) {
         if (owner == null || owner.getStage() == null) {
             return false;
         }
-        
+
         Stage stage = owner.getStage();
         boolean success = false;
-        
+
         // Получаем направление от игрока к целевой позиции
         Vector2 playerPos = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
         Vector2 direction = new Vector2(position).sub(playerPos).nor();
-        
+
         // Создаем снаряды
         for (int i = 0; i < projectileCount; i++) {
             Actor projectile = createProjectile(playerPos, direction);
@@ -73,10 +73,10 @@ public abstract class ProjectileAbility extends Ability {
                 success = true;
             }
         }
-        
+
         return success;
     }
-    
+
     @Override
     protected void updateActive(float delta) {
         // В базовой реализации снаряды управляются своей собственной логикой
@@ -85,21 +85,19 @@ public abstract class ProjectileAbility extends Ability {
             isActive = false;
         }
     }
-    
+
     @Override
     protected void onLevelUp() {
-        // Увеличиваем базовые характеристики с повышением уровня
-        projectileDamage *= 1.2f;  // Увеличение урона на 20%
-        
-        // Улучшения с некоторыми порогами уровней
+        projectileDamage *= 1.2f;
+
         if (level == 3) {
-            projectileCount++; // На 3-м уровне добавляем дополнительный снаряд
+            projectileCount++;
         }
         if (level == 5) {
-            cooldown *= 0.8f; // На 5-м уровне уменьшаем перезарядку на 20%
+            cooldown *= 0.8f;
         }
     }
-    
+
     /**
      * Создает новый снаряд с заданными параметрами
      * @param startPosition начальная позиция снаряда
@@ -107,7 +105,7 @@ public abstract class ProjectileAbility extends Ability {
      * @return созданный актор снаряда
      */
     protected abstract Actor createProjectile(Vector2 startPosition, Vector2 direction);
-    
+
     /**
      * Возвращает текущее количество снарядов
      * @return количество создаваемых снарядов
@@ -115,7 +113,7 @@ public abstract class ProjectileAbility extends Ability {
     public int getProjectileCount() {
         return projectileCount;
     }
-    
+
     /**
      * Возвращает текущий урон снаряда с учетом уровня способности
      * @return значение урона
@@ -123,4 +121,4 @@ public abstract class ProjectileAbility extends Ability {
     public float getProjectileDamage() {
         return projectileDamage;
     }
-} 
+}

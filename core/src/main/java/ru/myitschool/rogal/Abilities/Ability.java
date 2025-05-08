@@ -61,7 +61,6 @@ public abstract class Ability {
      * @return true если способность активирована, false если нет (например, на кулдауне)
      */
     public boolean activate(Vector2 position) {
-        // Проверка, можно ли использовать способность
         if (!canActivate()) {
             return false;
         }
@@ -69,19 +68,15 @@ public abstract class Ability {
         // Проверка наличия достаточного количества энергии (если есть стоимость)
         if (energyCost > 0 && owner != null) {
             if (owner.getCurrentEnergy() < energyCost) {
-                // Недостаточно энергии для использования
                 return false;
             }
 
-            // Вычитаем стоимость энергии
             owner.useEnergy(energyCost);
         }
 
-        // Применение эффекта способности
         boolean success = use(position);
 
         if (success) {
-            // Устанавливаем кулдаун с учетом множителя кулдауна игрока
             if (owner != null) {
                 currentCooldown = cooldown * owner.getCooldownMultiplier();
             } else {
@@ -108,7 +103,6 @@ public abstract class Ability {
      * @param delta время между кадрами
      */
     public void update(float delta) {
-        // Обновляем таймер кулдауна
         if (currentCooldown > 0) {
             currentCooldown -= delta;
             if (currentCooldown < 0) {
@@ -116,13 +110,11 @@ public abstract class Ability {
             }
         }
 
-        // Обновляем активное состояние способности
         if (isActive) {
             activeTime += delta;
             updateActive(delta);
         }
 
-        // Проверяем автоматическое использование
         if (autoUse && canActivate() && owner != null) {
             tryAutoActivate(delta);
         }
@@ -232,7 +224,6 @@ public abstract class Ability {
     public void setLevel(int level) {
         this.level = level;
 
-        // Обновляем стоимость энергии согласно новому уровню
         updateEnergyCostOnLevelUp();
     }
 
@@ -313,14 +304,12 @@ public abstract class Ability {
             return false;
         }
 
-        // Проверяем, достаточно ли энергии у игрока
         if (energyCost > 0 && owner != null) {
             if (owner.getCurrentEnergy() < energyCost) {
                 return false;
             }
         }
 
-        // Применяем эффект способности (на позиции игрока)
         return activate(new Vector2(owner.getX() + owner.getOriginX(), owner.getY() + owner.getOriginY()));
     }
 
@@ -349,17 +338,14 @@ public abstract class Ability {
             return;
         }
 
-        // Обновляем таймер
         autoUseTimer += delta;
 
-        // Проверяем готовность способности
         if (autoUseTimer < 0.5f) {
             return;
         }
 
         autoUseTimer = 0f;
 
-        // Проверяем наличие врагов на сцене
         Stage stage = owner.getStage();
         if (stage == null) {
             return;
@@ -377,7 +363,6 @@ public abstract class Ability {
             return;
         }
 
-        // Проверяем, достаточно ли энергии для всех автоматически активируемых способностей
         float totalAutoUseCost = 0;
         for (Ability ability : owner.getAbilityManager().getAbilities()) {
             if (ability.isAutoUse() && ability.isUnlocked() && ability.canActivate()) {
@@ -396,38 +381,16 @@ public abstract class Ability {
             }
         }
 
-        // Находим ближайшего врага
         Vector2 targetPosition = findNearestEnemyPosition(range);
 
         if (targetPosition != null) {
-            // Проверяем, хватает ли энергии
             if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
                 LogHelper.debug("Ability", "Not enough energy for " + name + ": " +
                               owner.getCurrentEnergy() + "/" + energyCost);
                 return;
             }
 
-            // Пытаемся использовать способность
-            boolean success = activate(targetPosition);
-
-            // Более подробное логирование для отладки
-            if (success) {
-                LogHelper.log("Ability", "Ability auto-used: " + name +
-                            ", enemies on stage: " + enemiesCount);
-            } else {
-                // Выведем причину, почему не удалось активировать
-                if (currentCooldown > 0) {
-                    LogHelper.debug("Ability", "Failed to use " + name + ": on cooldown (" +
-                                  String.format("%.1f", currentCooldown) + " sec)");
-                } else if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
-                    LogHelper.debug("Ability", "Failed to use " + name + ": not enough energy (" +
-                                  owner.getCurrentEnergy() + "/" + energyCost + ")");
-                } else {
-                    LogHelper.debug("Ability", "Failed to use " + name + " for unknown reason");
-                }
-            }
-        } else {
-            LogHelper.debug("Ability", "No enemy in range to auto-use ability: " + name);
+            activate(targetPosition);
         }
     }
 
@@ -438,7 +401,6 @@ public abstract class Ability {
     protected Vector2 findTargetPosition() {
         if (owner == null || owner.getStage() == null) return null;
 
-        // По умолчанию используем позицию игрока
         Vector2 playerPos = new Vector2(owner.getX() + owner.getOriginX(), owner.getY() + owner.getOriginY());
 
         // Для атакующих способностей нужно найти ближайшего врага
@@ -451,9 +413,7 @@ public abstract class Ability {
                 // и проверим, можно ли его достать, если двигаться в его направлении
                 Vector2 anyEnemyPos = owner.findNearestEnemyPosition(1000f); // Используем большой радиус
                 if (anyEnemyPos != null) {
-                    // Вычисляем направление к врагу
                     Vector2 direction = new Vector2(anyEnemyPos).sub(playerPos).nor();
-                    // Возвращаем точку на максимальной дальности в направлении врага
                     return new Vector2(playerPos).add(direction.scl(range));
                 }
             }

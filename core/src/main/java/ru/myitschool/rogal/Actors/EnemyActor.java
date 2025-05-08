@@ -14,7 +14,6 @@ import ru.myitschool.rogal.CustomHelpers.Vectors.Vector2Helpers;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 
 public class EnemyActor extends Actor {
-    // Текстура и полигон для столкновений
     private final TextureRegion texture;
     private final Polygon hitbox;
 
@@ -58,23 +57,18 @@ public class EnemyActor extends Actor {
      * @param target цель (игрок)
      */
     public EnemyActor(int health, int damage, float speed, int reward, Vector2 position, PlayerActor target) {
-        // Используем базовую текстуру для противника
         Texture tex = new Texture("Damaged_Ship_03.png");
         texture = new TextureRegion(tex);
 
-        // Настройка размеров и начального положения
         setWidth(texture.getTexture().getWidth() * SCALE);
         setHeight(texture.getTexture().getHeight() * SCALE);
         setOriginX(getWidth() / 2);
         setOriginY(getHeight() / 2);
 
-        // Установка позиции
         setPosition(position.x, position.y);
 
-        // Создание хитбокса
         hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 20);
         hitbox.setOrigin(getOriginX(), getOriginY());
-
 
         // Установка характеристик
         this.maxHealth = health;
@@ -84,7 +78,6 @@ public class EnemyActor extends Actor {
         this.currentSpeed = speed;
         this.rewardExp = reward;
 
-        // Установка цели
         this.targetPlayer = target;
 
         LogHelper.log("EnemyActor", "Created new enemy with health: " + health);
@@ -96,42 +89,34 @@ public class EnemyActor extends Actor {
 
         if (isDead) return;
 
-        // Обновление таймера неуязвимости
         if (invulnerabilityTime > 0) {
             invulnerabilityTime -= delta;
         }
 
-        // Поиск игрока, если еще не найден
         if (targetPlayer == null) {
             findPlayer();
         }
 
-        // Движение врага
         if (targetPlayer != null) {
             moveTowardsPlayer(delta);
         }
 
-        // Обновление хитбокса
         updateHitbox();
 
-        // Обновляем таймер поведения
         behaviorTimer += delta;
         if (behaviorTimer >= behaviorDuration) {
             updateBehavior();
         }
 
-        // Обновляем кулдаун специальной атаки
         if (hasSpecialAttack && specialAttackCooldown > 0) {
             specialAttackCooldown -= delta;
 
-            // Если кулдаун истек и игрок в зоне поражения, используем специальную атаку
             if (specialAttackCooldown <= 0 && targetPlayer != null && distanceToPlayer < 200) {
                 performSpecialAttack();
                 specialAttackCooldown = MathUtils.random(5.0f, 10.0f);
             }
         }
 
-        // Выбираем направление движения в зависимости от типа поведения
         chooseMovementDirection(delta);
     }
 
@@ -142,17 +127,14 @@ public class EnemyActor extends Actor {
         Texture tex = new Texture(texturePath);
         texture = new TextureRegion(tex);
 
-        // Настройка размеров и начального положения
         setWidth(texture.getTexture().getWidth() * SCALE);
         setHeight(texture.getTexture().getHeight() * SCALE);
         setOriginX(getWidth() / 2);
         setOriginY(getHeight() / 2);
 
-        // Создание хитбокса с использованием утилиты
         hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 10);
         hitbox.setOrigin(getOriginX(), getOriginY());
 
-        // Начальное случайное направление
         float randomAngle = MathUtils.random(360f);
         randomDirection.set(MathUtils.cosDeg(randomAngle), MathUtils.sinDeg(randomAngle)).nor();
 
@@ -168,13 +150,11 @@ public class EnemyActor extends Actor {
         Texture tex = new Texture(texturePath);
         texture = new TextureRegion(tex);
 
-        // Настройка размеров и начального положения
         setWidth(texture.getTexture().getWidth() * SCALE);
         setHeight(texture.getTexture().getHeight() * SCALE);
         setOriginX(getWidth() / 2);
         setOriginY(getHeight() / 2);
 
-        // Создание хитбокса в зависимости от выбранного типа
         switch (hitboxType.toLowerCase()) {
             case "circle":
                 float radius = Math.min(getWidth(), getHeight()) / 2;
@@ -192,7 +172,6 @@ public class EnemyActor extends Actor {
         hitbox.setOrigin(getOriginX(), getOriginY());
 
 
-        // Начальное случайное направление
         float randomAngle = MathUtils.random(360f);
         randomDirection.set(MathUtils.cosDeg(randomAngle), MathUtils.sinDeg(randomAngle)).nor();
 
@@ -204,37 +183,29 @@ public class EnemyActor extends Actor {
      * @param delta время между кадрами
      */
     private void moveTowardsPlayer(float delta) {
-        // Проверяем, существует ли игрок
         if (targetPlayer == null) {
             return;
         }
 
-        // Проверяем, существует ли еще игрок
         if (targetPlayer.getStage() == null) {
             targetPlayer = null;
             return;
         }
 
-        // Рассчитываем вектор направления к игроку
         float targetX = targetPlayer.getX() + targetPlayer.getWidth() / 2;
         float targetY = targetPlayer.getY() + targetPlayer.getHeight() / 2;
         float enemyX = getX() + getWidth() / 2;
         float enemyY = getY() + getHeight() / 2;
 
-        // Расстояние до игрока
         distanceToPlayer = Vector2.dst(enemyX, enemyY, targetX, targetY);
 
-        // Создаем вектор направления к игроку и нормализуем его
         Vector2 direction = new Vector2(targetX - enemyX, targetY - enemyY).nor();
 
-        // Вычисляем угол поворота (в градусах)
         float angle = Vector2Helpers.getRotationByVector(direction.x, direction.y);
         setRotation(angle);
 
-        // Перемещение в сторону игрока
         moveBy(direction.x * currentSpeed, direction.y * currentSpeed);
 
-        // Проверка столкновения с игроком (для совместимости с Enemy)
         if (distanceToPlayer < 32) {
             targetPlayer.takeDamage(collisionDamage);
         }
@@ -261,20 +232,16 @@ public class EnemyActor extends Actor {
      * Действия при смерти врага
      */
     public void die() {
-        // Устанавливаем флаг смерти
         isDead = true;
 
-        // Удаляем со сцены
         remove();
 
-        // Даем опыт игроку, если он существует
         if (targetPlayer != null) {
             int calculatedExp = calculateExperienceReward();
             targetPlayer.addExperience(calculatedExp);
             LogHelper.log("EnemyActor", "Enemy died, calculated reward: " + calculatedExp);
         }
 
-        // Уведомляем обработчик о смерти
         if (deathHandler != null) {
             deathHandler.onEnemyDeath(this);
         }
@@ -319,18 +286,14 @@ public class EnemyActor extends Actor {
      * @return true если урон был нанесен, false если враг неуязвим
      */
     public boolean takeDamage(int damage) {
-        // Проверка на неуязвимость
         if (invulnerabilityTime > 0) {
             return false;
         }
 
-        // Наносим урон
         currentHealth = Math.max(0, currentHealth - damage);
 
-        // Устанавливаем период неуязвимости
         invulnerabilityTime = MAX_INVULNERABILITY_TIME;
 
-        // Проверяем, жив ли враг
         if (currentHealth <= 0) {
             die();
             return true;
@@ -348,7 +311,6 @@ public class EnemyActor extends Actor {
         this.behaviorType = type;
         this.behaviorTimer = 0;
 
-        // Генерируем длительность поведения
         this.behaviorDuration = MathUtils.random(2.0f, 5.0f);
     }
 
@@ -357,7 +319,6 @@ public class EnemyActor extends Actor {
      * @return количество опыта
      */
     private int calculateExperienceReward() {
-        // Базовая награда
         int baseReward = rewardExp;
 
         // Множители для различных характеристик
@@ -510,9 +471,7 @@ public class EnemyActor extends Actor {
      * Выбирает направление движения в зависимости от типа поведения
      */
     private void chooseMovementDirection(float delta) {
-        // Проверка на null, чтобы избежать NullPointerException
         if (targetPlayer == null) {
-            // Если игрок не найден, делаем случайные движения
             if (MathUtils.randomBoolean(0.05f)) {
                 randomDirection.set(MathUtils.random(-1f, 1f), MathUtils.random(-1f, 1f)).nor();
             }

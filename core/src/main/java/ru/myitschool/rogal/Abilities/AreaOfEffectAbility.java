@@ -12,17 +12,17 @@ import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
  * Абстрактный класс для способностей с областью действия
  */
 public abstract class AreaOfEffectAbility extends Ability {
-    
+
     // Параметры области действия
     protected float areaRadius;            // Радиус области действия
     protected float effectDuration;        // Длительность эффекта области
     protected float baseEffectValue;       // Базовое значение эффекта (урон/лечение и т.д.)
     protected String effectTexturePath;    // Путь к текстуре эффекта
     protected Circle effectArea;           // Круговая область действия эффекта
-    
+
     // Текущее состояние
     protected Vector2 currentPosition;     // Текущая позиция области
-    
+
     /**
      * Конструктор для способности с областью действия
      * @param name название способности
@@ -40,89 +40,80 @@ public abstract class AreaOfEffectAbility extends Ability {
                             float areaRadius, float effectDuration, float baseEffectValue,
                             String effectTexturePath) {
         super(name, description, iconPath, cooldown, range);
-        
+
         this.areaRadius = areaRadius;
         this.effectDuration = effectDuration;
         this.baseEffectValue = baseEffectValue;
         this.effectTexturePath = effectTexturePath;
         this.effectArea = new Circle();
-        
-        // Загрузка иконки
+
         try {
             this.icon = new Texture(Gdx.files.internal(iconPath));
         } catch (Exception e) {
             LogHelper.error("AreaOfEffectAbility", "Не удалось загрузить иконку: " + iconPath);
         }
     }
-    
+
     @Override
     protected boolean use(Vector2 position) {
         if (owner == null || owner.getStage() == null) {
             return false;
         }
-        
-        // Применяем ограничение на дальность
+
         Vector2 playerPos = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
         float distance = playerPos.dst(position);
-        
+
         if (distance > range) {
-            // Если цель слишком далеко, ограничиваем радиусом действия
             Vector2 direction = new Vector2(position).sub(playerPos).nor();
             position = new Vector2(playerPos).add(direction.scl(range));
         }
-        
-        // Устанавливаем область эффекта
+
         currentPosition = position;
         effectArea.set(position.x, position.y, areaRadius);
-        
-        // Создаем визуальный эффект на сцене
+
         Actor effectVisual = createEffectVisual(position);
         if (effectVisual != null) {
             owner.getStage().addActor(effectVisual);
         }
-        
+
         return true;
     }
-    
+
     @Override
     protected void updateActive(float delta) {
-        // Проверяем время активности
         if (activeTime >= effectDuration) {
             isActive = false;
             return;
         }
-        
-        // Если способность активна, выполняем эффект области
+
         applyEffect(delta);
     }
-    
+
     @Override
     protected void onLevelUp() {
-        // Увеличиваем базовые характеристики с повышением уровня
-        baseEffectValue *= 1.25f;  // Увеличение силы эффекта на 25%
-        
-        // Улучшения с некоторыми порогами уровней
+        baseEffectValue *= 1.25f;
+
         if (level == 3) {
-            areaRadius *= 1.2f;  // На 3-м уровне увеличиваем радиус на 20%
+            areaRadius *= 1.2f;
         }
         if (level == 5) {
-            effectDuration *= 1.3f;  // На 5-м уровне увеличиваем длительность на 30%
+            effectDuration *= 1.3f;
         }
     }
-    
+
     /**
      * Создает визуальное представление эффекта
      * @param position позиция эффекта
      * @return актор визуального эффекта
      */
     protected abstract Actor createEffectVisual(Vector2 position);
-    
+
     /**
      * Применяет эффект в области действия
      * @param delta время между кадрами
      */
     protected abstract void applyEffect(float delta);
-    
+
     /**
      * Проверяет, находится ли актор в области действия способности
      * @param actor проверяемый актор
@@ -133,10 +124,10 @@ public abstract class AreaOfEffectAbility extends Ability {
             actor.getX() + actor.getWidth() / 2,
             actor.getY() + actor.getHeight() / 2
         );
-        
+
         return effectArea.contains(actorCenter);
     }
-    
+
     /**
      * Возвращает текущую область действия способности
      * @return круг, представляющий область действия
@@ -144,7 +135,7 @@ public abstract class AreaOfEffectAbility extends Ability {
     public Circle getEffectArea() {
         return effectArea;
     }
-    
+
     /**
      * Возвращает текущую силу эффекта, учитывая уровень способности
      * @return значение эффекта
@@ -152,7 +143,7 @@ public abstract class AreaOfEffectAbility extends Ability {
     public float getEffectValue() {
         return baseEffectValue;
     }
-    
+
     /**
      * Возвращает длительность эффекта
      * @return длительность в секундах
@@ -160,4 +151,4 @@ public abstract class AreaOfEffectAbility extends Ability {
     public float getEffectDuration() {
         return effectDuration;
     }
-} 
+}

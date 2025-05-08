@@ -99,10 +99,8 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
         activeTime = 0f;
         currentPosition = position;
 
-        // Очищаем предыдущие частицы
         clearParticles();
 
-        // Сохраняем исходную скорость игрока для использования в буфах
         if (owner instanceof PlayerActor) {
             PlayerActor player = owner;
             baseSpeed = player.getSpeed();
@@ -206,7 +204,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             speedBoostTimer -= delta;
 
             if (speedBoostTimer <= 0) {
-                // Время действия буфа закончилось
                 speedBoostActive = false;
                 resetPlayerSpeed();
                 LogHelper.log("HealingAuraAbility", "Speed boost expired");
@@ -236,7 +233,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             if (debuffCheckTimer <= 0) {
                 debuffCheckTimer = DEBUFF_CHECK_INTERVAL;
 
-                // Проверяем и уменьшаем активные дебаффы
                 processActiveDebuffs();
             }
         }
@@ -247,23 +243,17 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
      */
     private void processActiveDebuffs() {
         if (owner instanceof PlayerActor) {
-            // Здесь предполагаем, что у PlayerActor есть метод getActiveDebuffs()
             HashMap<String, Float> playerDebuffs = getPlayerDebuffs();
 
-            // Очищаем наши записи о дебаффах, которые уже не активны
             activeDebuffsReduction.keySet().removeIf(debuffId -> !playerDebuffs.containsKey(debuffId));
 
-            // Обрабатываем текущие дебаффы игрока
             for (String debuffId : playerDebuffs.keySet()) {
                 if (!activeDebuffsReduction.containsKey(debuffId)) {
-                    // Это новый дебафф, уменьшаем его длительность
                     float originalDuration = playerDebuffs.get(debuffId);
                     float reduction = originalDuration * (debuffReductionPercent / 100f);
 
-                    // Записываем, сколько мы уменьшили для этого дебаффа
                     activeDebuffsReduction.put(debuffId, reduction);
 
-                    // Уменьшаем длительность дебаффа
                     reduceDebuffDuration(debuffId, reduction);
                     LogHelper.log("HealingAuraAbility", "Reduced debuff " + debuffId + " duration by " + reduction + " seconds");
                 }
@@ -295,11 +285,10 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
 
     @Override
     protected void onLevelUp() {
-        cooldown = Math.max(2.0f, cooldown - 0.5f); // Уменьшаем кулдаун
-        healAmount *= 1.125f; // Увеличиваем лечение на 12.5%
-        damageAmount *= 1.125f; // Увеличиваем урон на 12.5%
+        cooldown = Math.max(2.0f, cooldown - 0.5f);
+        healAmount *= 1.125f;
+        damageAmount *= 1.125f;
 
-        // Специальные улучшения на определенных уровнях
         if (level == 3) {
             reducesDebuffs = true;
             LogHelper.log("HealingAuraAbility", "Debuff reduction unlocked at level 3");
@@ -325,12 +314,10 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
     protected void applyEffect(float delta) {
         if (owner == null || owner.getStage() == null) return;
 
-        // Получаем позицию игрока
         Vector2 playerPos = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
         effectArea.setPosition(playerPos.x, playerPos.y);
         effectArea.setRadius(areaRadius);
 
-        // Лечим игрока
         float currentHealAmount = healAmount * delta;
         int currentHealth = owner.getCurrentHealth();
         int maxHealth = owner.getMaxHealth();
@@ -339,7 +326,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             owner.setCurrentHealth(Math.min(currentHealth + Math.round(currentHealAmount), maxHealth));
         }
 
-        // Наносим урон врагам в радиусе
         for (Actor actor : owner.getStage().getActors()) {
             if (actor instanceof EnemyActor) {
                 EnemyActor enemy = (EnemyActor) actor;
@@ -350,7 +336,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             }
         }
 
-        // Применяем дополнительные эффекты
         if (boostsSpeed && !speedBoostActive && owner instanceof PlayerActor) {
             applySpeedBoost();
         }
@@ -372,15 +357,12 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
     private void applySpeedBoost() {
         if (owner instanceof PlayerActor) {
             PlayerActor player = owner;
-            // Устанавливаем флаг активного буста
             speedBoostActive = true;
             speedBoostTimer = speedBoostDuration;
 
-            // Сохраняем базовую скорость и вычисляем буст
             baseSpeed = player.getSpeed();
             boostedSpeed = baseSpeed * (1 + speedBoostPercent/100f);
 
-            // Применяем буст
             player.setSpeed(boostedSpeed);
 
             LogHelper.log("HealingAuraAbility", "Speed boost applied: " + baseSpeed + " -> " + boostedSpeed);
@@ -396,7 +378,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             if (clearedCount > 0) {
                 LogHelper.log("HealingAuraAbility", "Cleared " + clearedCount + " debuffs from player");
 
-                // Добавляем визуальный эффект очистки дебаффов
                 addDebuffClearingEffect();
             }
         }
@@ -461,16 +442,12 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
         public void act(float delta) {
             super.act(delta);
 
-            // Обновляем время для пульсирующего эффекта
             pulseTime += delta;
 
-            // Создаем пульсирующий эффект, меняя масштаб
             float pulseScale = 1f + 0.05f * (float)Math.sin(pulseTime * 3);
             setScale(pulseScale);
 
-            // Проверяем, активна ли еще способность
             if (!isActive) {
-                // Если способность закончилась, удаляем ауру
                 addAction(Actions.sequence(
                     Actions.fadeOut(0.5f),
                     Actions.removeActor()
@@ -621,13 +598,11 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
         public void act(float delta) {
             super.act(delta);
 
-            // Следуем за целью
             setPosition(
                 target.getX() + target.getWidth()/2 + offsetX - getWidth()/2,
                 target.getY() + target.getHeight()/2 + offsetY - getHeight()/2
             );
 
-            // Уменьшаем время жизни
             lifetime -= delta;
             if (lifetime <= 0) {
                 remove();

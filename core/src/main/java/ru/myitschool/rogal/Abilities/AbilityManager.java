@@ -21,7 +21,6 @@ public class AbilityManager implements Disposable {
     // Максимальное количество способностей, которые может иметь игрок
     public static final int MAX_ABILITIES = 5;
 
-    // Ссылка на игрока - владельца способностей
     private final PlayerActor owner;
 
     /**
@@ -71,7 +70,6 @@ public class AbilityManager implements Disposable {
         boolean activated = ability.activate(targetPosition);
 
         if (activated) {
-            // Добавляем способность в список активных, если она еще не там
             if (!activeAbilities.contains(ability, true)) {
                 activeAbilities.add(ability);
             }
@@ -85,17 +83,14 @@ public class AbilityManager implements Disposable {
      * @param delta время между кадрами
      */
     public void update(float delta) {
-        // Создаем копию списка способностей для безопасной итерации
         Array<Ability> abilitiesCopy = new Array<>(abilities);
 
-        // Обновляем каждую способность
         for (Ability ability : abilitiesCopy) {
             if (ability != null) {
                 ability.update(delta);
             }
         }
 
-        // Создаем новый список активных способностей
         Array<Ability> newActiveAbilities = new Array<>();
         for (Ability ability : abilitiesCopy) {
             if (ability != null && ability.isActive()) {
@@ -103,7 +98,6 @@ public class AbilityManager implements Disposable {
             }
         }
 
-        // Обновляем список активных способностей
         activeAbilities.clear();
         activeAbilities.addAll(newActiveAbilities);
     }
@@ -233,7 +227,6 @@ public class AbilityManager implements Disposable {
      */
     @Override
     public void dispose() {
-        // Освобождаем ресурсы каждой способности
         for (Ability ability : abilities) {
             if (ability != null) {
                 ability.dispose();

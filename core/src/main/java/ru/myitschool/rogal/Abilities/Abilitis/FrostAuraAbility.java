@@ -17,16 +17,12 @@ import ru.myitschool.rogal.Actors.EnemyActor;
 import ru.myitschool.rogal.Actors.PlayerActor;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 
-/**
- * Способность "Ледяная Аура" - создает область холода вокруг игрока,
- * замедляющую врагов и наносящую им периодический урон.
- */
 public class FrostAuraAbility extends AreaOfEffectAbility {
 
     private float damageAmount = 8f;          // Базовый урон от ауры
     private float slowAmount = 30f;           // Замедление в процентах (30%)
     private float slowDuration = 1.5f;        // Длительность замедления после выхода из ауры
-    private final float effectDuration = 0f;        // Длительность действия ауры
+    private final float effectDuration = 0.5f;        // Длительность действия ауры
     private final float effectFrequency = 0.5f;     // Частота нанесения урона (раз в 0.5 сек)
     private float effectTimer = 0f;           // Таймер для эффекта
 
@@ -54,7 +50,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         abilityType = AbilityType.ATTACK;
         energyCost = 20f;
 
-        // Загружаем иконку способности
         try {
             this.icon = new Texture(Gdx.files.internal("abilities/frost_aura.png"));
         } catch (Exception e) {
@@ -73,7 +68,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         effectTimer = 0f;
         currentPosition = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
 
-        // Создаем визуальный эффект ауры
         if (owner.getStage() != null) {
             auraVisual = new FrostAuraVisual(areaRadius);
             owner.getStage().addActor(auraVisual);
@@ -108,7 +102,7 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
 
         activeTime += delta;
 
-        if (activeTime >= effectDuration && effectDuration > 0) {
+        if (activeTime >= effectDuration) {
             isActive = false;
             if (auraVisual != null) {
                 auraVisual.fadeOut();
@@ -116,17 +110,14 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
             return;
         }
 
-        // Обновляем позицию ауры
         currentPosition.set(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
 
-        // Обновляем таймер эффекта и применяем эффект с определенным интервалом
         effectTimer += delta;
         if (effectTimer >= effectFrequency) {
             effectTimer = 0f;
             applyEffect(delta);
         }
 
-        // Обновляем позицию визуального эффекта
         if (auraVisual != null) {
             auraVisual.setPosition(
                 owner.getX() + owner.getWidth()/2 - auraVisual.getWidth()/2,
@@ -134,7 +125,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
             );
         }
 
-        // Обновляем эффекты замедления
         updateSlowEffects(delta);
     }
 
@@ -147,7 +137,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
             effect.remainingTime -= delta;
 
             if (effect.remainingTime <= 0) {
-                // Сбрасываем скорость врага к нормальной
                 resetEnemySpeed(effect.enemy);
                 activeSlowEffects.removeIndex(i);
             }
@@ -160,7 +149,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
     private void resetEnemySpeed(EnemyActor enemy) {
         if (enemy == null) return;
 
-        // Предполагаем, что у EnemyActor есть метод resetSpeed()
         enemy.resetSpeed();
         LogHelper.log("FrostAuraAbility", "Enemy speed restored to normal");
     }
@@ -187,13 +175,10 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
                 float distance = new Vector2(currentPosition.x - enemyCenterX, currentPosition.y - enemyCenterY).len();
 
                 if (distance <= areaRadius) {
-                    // Наносим урон
                     enemy.takeDamage(Math.round(damageAmount));
 
-                    // Применяем замедление
                     applySlowToEnemy(enemy);
 
-                    // Создаем визуальный эффект замедления
                     createFrostParticle(enemy);
                 }
             }
@@ -204,12 +189,10 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
      * Применяет эффект замедления к врагу
      */
     private void applySlowToEnemy(EnemyActor enemy) {
-        // Проверяем, есть ли уже активный эффект замедления для этого врага
         boolean alreadySlowed = false;
 
         for (SlowEffect effect : activeSlowEffects) {
             if (effect.enemy == enemy) {
-                // Обновляем время действия эффекта
                 effect.remainingTime = slowDuration;
                 alreadySlowed = true;
                 break;
@@ -217,10 +200,8 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         }
 
         if (!alreadySlowed) {
-            // Применяем замедление
             enemy.applySlowEffect(slowAmount / 100f);
 
-            // Добавляем в список активных эффектов
             activeSlowEffects.add(new SlowEffect(enemy, slowDuration));
 
             LogHelper.log("FrostAuraAbility", "Enemy slowed by " + slowAmount + "%");
@@ -239,29 +220,28 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
 
     @Override
     protected void onLevelUp() {
-        // Улучшения при повышении уровня
-        damageAmount *= 1.25f;  // Увеличиваем урон на 25%
+        damageAmount *= 1.25f;
 
         if (level == 2) {
-            slowAmount = 40f;  // Повышаем замедление до 40%
+            slowAmount = 40f;
             LogHelper.log("FrostAuraAbility", "Level 2: Damage and slow effect increased");
         }
 
         if (level == 3) {
-            areaRadius *= 1.3f;  // Увеличиваем радиус на 30%
-            cooldown = 10f;      // Уменьшаем кулдаун
+            areaRadius *= 1.3f;
+            cooldown = 10f;
             LogHelper.log("FrostAuraAbility", "Level 3: Area of effect increased and cooldown reduced");
         }
 
         if (level == 4) {
-            damageAmount *= 1.5f;  // Дополнительно увеличиваем урон в 1.5 раза
-            slowDuration = 2.5f;   // Увеличиваем длительность замедления
+            damageAmount *= 1.5f;
+            slowDuration = 2.5f;
             LogHelper.log("FrostAuraAbility", "Level 4: Damage significantly increased and slow duration extended");
         }
 
         if (level == 5) {
-            damageAmount *= 1.5f;  // Еще увеличиваем урон
-            slowAmount = 80f;      // Почти полная заморозка (80% замедление)
+            damageAmount *= 1.5f;
+            slowAmount = 50f;
             LogHelper.log("FrostAuraAbility", "Level 5: Damage greatly increased and enemies are now almost completely frozen");
         }
     }
@@ -353,7 +333,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         public void draw(Batch batch, float parentAlpha) {
             if (texture == null) return;
 
-            // Рисуем с синеватым оттенком для эффекта льда
             batch.setColor(0.7f, 0.8f, 1f, alpha * parentAlpha);
             batch.draw(
                 texture,
@@ -428,7 +407,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
             setSize(20, 20);
             setOrigin(getWidth() / 2, getHeight() / 2);
 
-            // Случайное положение на враге
             float offsetX = MathUtils.random(-target.getWidth()/3, target.getWidth()/3);
             float offsetY = MathUtils.random(-target.getHeight()/3, target.getHeight()/3);
 
@@ -465,7 +443,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
                 return;
             }
 
-            // Следуем за целью
             setPosition(
                 target.getX() + getX() - target.getX(),
                 target.getY() + getY() - target.getY()

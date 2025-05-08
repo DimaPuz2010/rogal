@@ -52,10 +52,9 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
               "abilities/blade_icon.png");
 
         abilityType = AbilityType.ATTACK;
-        energyCost = 20f;  // Устанавливаем более сбалансированную стоимость
+        energyCost = 20f;
         damageAmount = 25f;
 
-        // Загружаем иконку
         try{
             this.icon = new Texture(Gdx.files.internal("abilities/blade_icon.png"));
         } catch (Exception e) {
@@ -86,21 +85,17 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
     private void createBladeVisuals() {
         if (owner == null || owner.getStage() == null) return;
 
-        // Определяем количество лезвий в зависимости от уровня
         int bladeCount = 1;
         if (level >= 3) bladeCount = 2;
         if (level >= 5) bladeCount = 3;
 
-        // Угол между лезвиями для равномерного распределения
         float angleStep = 360f / bladeCount;
 
-        // Создаем лезвия и равномерно распределяем их
         for (int i = 0; i < bladeCount; i++) {
             OrbitingBladeVisual blade = new OrbitingBladeVisual(areaRadius);
             blade.offsetAngle = i * angleStep;
             owner.getStage().addActor(blade);
 
-            // Сохраняем ссылку на первое лезвие
             if (i == 0) {
                 bladeVisual = blade;
             }
@@ -118,7 +113,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         }
 
         if (owner != null && owner.getStage() != null) {
-            // Удаляем все OrbitingBladeVisual со сцены
             Array<Actor> actors = owner.getStage().getActors();
             for (int i = actors.size - 1; i >= 0; i--) {
                 Actor actor = actors.get(i);
@@ -145,7 +139,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
 
         currentPosition.set(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
 
-        // Обновляем список врагов, с которых можно снять кулдаун удара
         for (int i = hitEnemies.size - 1; i >= 0; i--) {
             HitEnemy hitEnemy = hitEnemies.get(i);
             hitEnemy.timer -= delta;
@@ -168,11 +161,9 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
 
         Stage stage = owner.getStage();
 
-        // Создаем списки врагов и лезвий перед проверкой столкновений
         Array<EnemyActor> enemies = new Array<>();
         Array<OrbitingBladeVisual> blades = new Array<>();
 
-        // Сначала собираем всех врагов и лезвия в отдельные списки
         Array<Actor> actors = stage.getActors();
         for (int i = 0; i < actors.size; i++) {
             Actor actor = actors.get(i);
@@ -183,7 +174,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
             }
         }
 
-        // Теперь проверяем коллизии, используя сохраненные списки
         for (EnemyActor enemy : enemies) {
             boolean recentlyHit = false;
             for (HitEnemy hitEnemy : hitEnemies) {
@@ -194,14 +184,13 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
             }
 
             if (!recentlyHit) {
-                // Проверяем коллизию с каждым лезвием
                 for (OrbitingBladeVisual blade : blades) {
                     if (checkBladeCollision(enemy, blade)) {
                         enemy.takeDamage(Math.round(damageAmount));
                         hitEnemies.add(new HitEnemy(enemy, hitCooldown));
                         blade.playHitEffect();
                         LogHelper.log("OrbitingBladeAbility", "Enemy hit with orbiting blade! Damage: " + Math.round(damageAmount));
-                        break; // Достаточно одного удара по врагу
+                        break;
                     }
                 }
             }
@@ -231,8 +220,8 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
 
     @Override
     protected void onLevelUp() {
-        cooldown = Math.max(3.0f, cooldown - 0.5f); // Уменьшаем кулдаун
-        damageAmount *= 1.3f; // Увеличиваем урон на 30%
+        cooldown = Math.max(3.0f, cooldown - 0.5f);
+        damageAmount *= 1.3f;
 
         if (level == 2) {
             rotationSpeed *= 1.25f;
@@ -240,10 +229,8 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         }
 
         if (level == 3) {
-            // Добавляем второе лезвие в updateActive()
             LogHelper.log("OrbitingBladeAbility", "Second blade added at level 3");
 
-            // Обновляем визуальные элементы если способность активна
             if (isActive) {
                 clearBlades();
                 createBladeVisuals();
@@ -251,18 +238,15 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         }
 
         if (level == 4) {
-            damageAmount *= 1.5f; // Значительное увеличение урона
-            areaRadius *= 1.3f;   // Увеличиваем размер лезвия
+            damageAmount *= 1.5f;
+            areaRadius *= 1.3f;
             LogHelper.log("OrbitingBladeAbility", "Damage and size significantly increased at level 4");
         }
 
         if (level == 5) {
-            orbitRadius *= 1.5f;  // Увеличиваем радиус орбиты
-
-            // Добавляем третье лезвие в updateActive()
+            orbitRadius *= 1.5f;
             LogHelper.log("OrbitingBladeAbility", "Orbit radius increased and third blade added at level 5");
 
-            // Обновляем визуальные элементы если способность активна
             if (isActive) {
                 clearBlades();
                 createBladeVisuals();
@@ -280,7 +264,7 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         Stage stage = owner.getStage();
         boolean enemiesNearby = false;
 
-        float checkRadius = 200f; // Радиус проверки наличия врагов
+        float checkRadius = 200f;
         Vector2 playerPos = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
 
         for (Actor actor : stage.getActors()) {
@@ -327,16 +311,13 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         private static final float APPEAR_DURATION = 0.7f; // Длительность анимации появления в секундах
 
         public OrbitingBladeVisual(float size) {
-            // Загружаем текстуру лезвия
             Texture tex = new Texture(Gdx.files.internal(effectTexturePath));
             this.texture = new TextureRegion(tex);
 
-            // Настраиваем размеры и положение
             setWidth(size * 2);
             setHeight(size);
             setOrigin(getWidth() / 2, getHeight() / 2);
 
-            // Сначала размещаем лезвие в центре игрока
             if (owner != null) {
                 setPosition(
                     owner.getX() + owner.getWidth()/2 - getWidth()/2,
@@ -344,7 +325,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
                 );
             }
 
-            // Создаем хитбокс
             hitbox = new Polygon(new float[]{
                 0, 0,
                 getWidth(), 0,
@@ -359,13 +339,10 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
 
         @Override
         public void draw(Batch batch, float parentAlpha) {
-            // Рассчитываем прозрачность с учетом прогресса анимации появления
             float alpha = getColor().a * parentAlpha;
 
-            // Настраиваем цвет с эффектом свечения (белее в центре)
             batch.setColor(1f, 1f, 1f, alpha);
 
-            // Рисуем лезвие
             batch.draw(
                 texture,
                 getX(),
@@ -379,7 +356,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
                 getRotation() - 180f
             );
 
-            // Восстанавливаем цвет
             batch.setColor(1f, 1f, 1f, 1f);
         }
 
@@ -390,31 +366,25 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
             if (owner == null) return;
 
             if (isAppearing) {
-                // Обновляем прогресс анимации появления
                 appearProgress += delta / APPEAR_DURATION;
                 if (appearProgress >= 1f) {
                     appearProgress = 1f;
                     isAppearing = false;
                 }
 
-                // Меняем прозрачность плавно
                 setColor(1f, 1f, 1f, appearProgress);
 
-                // Меняем размер плавно
                 setScale(0.1f + 0.9f * appearProgress);
 
-                // Постепенно перемещаем лезвие от центра к орбите
                 float targetAngle = currentAngle + offsetAngle;
                 float currentRadius = orbitRadius * appearProgress;
 
-                // Расчет промежуточной позиции
                 float x = owner.getX() + owner.getWidth()/2 + currentRadius * (float)Math.cos(Math.toRadians(targetAngle)) - getWidth()/2;
                 float y = owner.getY() + owner.getHeight()/2 + currentRadius * (float)Math.sin(Math.toRadians(targetAngle)) - getHeight()/2;
 
                 setPosition(x, y);
                 setRotation(targetAngle);
             } else {
-                // Стандартное поведение на орбите
                 float angle = currentAngle + offsetAngle;
                 float x = owner.getX() + owner.getWidth()/2 + orbitRadius * (float)Math.cos(Math.toRadians(angle)) - getWidth()/2;
                 float y = owner.getY() + owner.getHeight()/2 + orbitRadius * (float)Math.sin(Math.toRadians(angle)) - getHeight()/2;
@@ -423,13 +393,10 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
                 setRotation(angle);
             }
 
-            // Обновляем хитбокс
             hitbox.setPosition(getX(), getY());
             hitbox.setRotation(getRotation());
 
-            // Если способность завершается, добавляем эффект исчезновения
             if (!isActive && !hasActions()) {
-                // Возвращаем в центр игрока с затуханием
                 float centerX = owner.getX() + owner.getWidth()/2 - getWidth()/2;
                 float centerY = owner.getY() + owner.getHeight()/2 - getHeight()/2;
 
@@ -448,10 +415,9 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
          * Активирует эффект удара для лезвия
          */
         public void playHitEffect() {
-            // Добавляем визуальный эффект при ударе врага
             addAction(Actions.sequence(
-                Actions.alpha(0.5f, 0.1f), // Временно становимся полупрозрачными
-                Actions.alpha(1f, 0.1f)    // Возвращаем обычную прозрачность
+                Actions.alpha(0.5f, 0.1f),
+                Actions.alpha(1f, 0.1f)
             ));
         }
 
