@@ -22,7 +22,7 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
     private float damageAmount = 8f;          // Базовый урон от ауры
     private float slowAmount = 30f;           // Замедление в процентах (30%)
     private float slowDuration = 1.5f;        // Длительность замедления после выхода из ауры
-    private final float effectDuration = 0.5f;        // Длительность действия ауры
+    private final float effectDuration = 10f;        // Длительность действия ауры
     private final float effectFrequency = 0.5f;     // Частота нанесения урона (раз в 0.5 сек)
     private float effectTimer = 0f;           // Таймер для эффекта
 

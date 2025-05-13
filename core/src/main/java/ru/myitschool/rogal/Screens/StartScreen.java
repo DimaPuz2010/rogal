@@ -57,12 +57,12 @@ public class StartScreen implements Screen {
             }
         });
 
-        // Создаем кнопку "Магазин улучшений" с пиксельным шрифтом
-        TextButton upgradeButton = ButtonCreator.createButton("МАГАЗИН УЛУЧШЕНИЙ", FontManager.getButtonFont());
+        // Создаем кнопку "улучшения" с пиксельным шрифтом
+        TextButton upgradeButton = ButtonCreator.createButton("УЛУЧШЕНИЯ", FontManager.getButtonFont());
         upgradeButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Переходим в магазин улучшений
+                // Переходим в улучшения
                 game.setScreen(new UpgradeScreen(game));
                 dispose();
             }

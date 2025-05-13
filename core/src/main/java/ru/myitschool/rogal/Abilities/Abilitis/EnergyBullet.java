@@ -1,14 +1,17 @@
 package ru.myitschool.rogal.Abilities.Abilitis;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.utils.Array;
 
 import ru.myitschool.rogal.Abilities.Ability;
@@ -33,7 +36,7 @@ public class EnergyBullet extends Ability {
     public EnergyBullet() {
         super("Energy Bullet", "Создаёт энергетический снаряд, который автоматически летит к врагу и наносит урон\n" +
                 "Уровень 3: Выпускает 2 снаряда\n" +
-                "Уровень 5: Выпускает 3 снаряда",
+                "Уровень 5: Выпускает 3 снаряда и при попадании создаёт мини-молнию, поражающую ближайших врагов",
               "abilities/fireball.png", 1.0f, 500f);
 
         this.abilityType = AbilityType.ATTACK;
@@ -125,14 +128,13 @@ public class EnergyBullet extends Ability {
         cooldown = Math.max(0.8f, cooldown - 0.3f);
         range += 20f;
         projectileDamage += 2.5f;
-        projectileCount += 1;
 
         if (level == 3) {
             projectileCount += 2;
             projectileDamage += 5;
             LogHelper.log("EnergyBullet", "Level 3 upgrade: Now fires 2 projectiles!");
         } else if (level == 5) {
-            projectileCount += 2;
+            projectileCount += 1;
             projectileDamage += 10;
             LogHelper.log("EnergyBullet", "Level 5 upgrade: Now fires 3 projectiles!");
         }
@@ -347,11 +349,44 @@ public class EnergyBullet extends Ability {
                     EnemyActor enemy = (EnemyActor) actor;
                     if (Intersector.overlapConvexPolygons(hitbox, enemy.getHitbox())) {
                         enemy.takeDamage(Math.round(damage));
+
+                        // На 5 уровне создаем мини-молнию при попадании
+                        if (level >= 5) {
+                            createLightningChainEffect(enemy);
+                        }
+
                         remove();
                         break;
                     }
                 }
             }
+        }
+
+        /**
+         * Создает эффект мини-молнии при попадании на 5 уровне
+         *
+         * @param hitEnemy враг, в которого попал снаряд
+         */
+        private void createLightningChainEffect(EnemyActor hitEnemy) {
+            if (owner == null || owner.getStage() == null) return;
+
+            // Параметры мини-молнии
+            float miniLightningDamage = damage * 0.5f; // Половина урона от пули
+            float miniLightningRange = 150f; // Меньшая дальность, чем у обычной молнии
+            int miniLightningJumps = 2; // Меньше перескоков
+            float miniLightningFalloff = 0.6f; // Быстрее падает урон
+
+            // Используем статический метод из LightningChainAbility для создания мини-молнии
+            LightningChainAbility.createMiniLightning(
+                EnergyBullet.this, // передаем текущую способность
+                hitEnemy, // враг, в которого попал снаряд
+                miniLightningDamage, // урон молнии
+                miniLightningRange, // дальность
+                miniLightningJumps, // количество перескоков
+                miniLightningFalloff // коэффициент уменьшения урона
+            );
+
+            LogHelper.log("EnergyBullet", "Created mini lightning chain effect");
         }
 
         @Override
@@ -361,6 +396,124 @@ public class EnergyBullet extends Ability {
                 projectileTexture = null;
             }
             return super.remove();
+        }
+    }
+
+    /**
+     * Внутренний класс для визуального эффекта молнии
+     * Упрощенная версия класса из LightningChainAbility
+     */
+    private class LightningEffect extends Actor {
+        private final TextureRegion texture;
+        private final Vector2 start = new Vector2();
+        private final Vector2 end = new Vector2();
+        private final float duration = 0.3f;
+        private final int segments = 3;
+        private final Vector2[] points;
+        private final float jitterAmount = 5f;
+        private final float jitterFrequency = 0.05f;
+        private float jitterTimer = 0f;
+
+        /**
+         * Создает визуальный эффект молнии между двумя точками
+         */
+        public LightningEffect(Vector2 start, Vector2 end) {
+            this.start.set(start);
+            this.end.set(end);
+
+            try {
+                this.texture = new TextureRegion(new Texture(Gdx.files.internal("abilities/lightning.png")));
+            } catch (Exception e) {
+                LogHelper.error("LightningEffect", "Failed to load lightning texture", e);
+                throw new RuntimeException("Failed to load lightning texture", e);
+            }
+
+            points = new Vector2[segments + 1];
+            for (int i = 0; i <= segments; i++) {
+                points[i] = new Vector2();
+            }
+
+            generateLightningPoints();
+
+            float width = end.dst(start);
+            float height = 15f;
+
+            setWidth(width);
+            setHeight(height);
+            setPosition(start.x, start.y - height / 2);
+            setColor(0.5f, 0.7f, 1f, 0.8f); // Другой цвет для мини-молнии
+
+            addAction(Actions.sequence(
+                Actions.delay(duration * 0.7f),
+                Actions.fadeOut(duration * 0.3f),
+                Actions.removeActor()
+            ));
+        }
+
+        /**
+         * Генерирует точки для сегментов молнии с случайными отклонениями
+         */
+        private void generateLightningPoints() {
+            points[0].set(start);
+            points[segments].set(end);
+
+            for (int i = 1; i < segments; i++) {
+                float t = (float) i / segments;
+
+                float x = start.x + (end.x - start.x) * t;
+                float y = start.y + (end.y - start.y) * t;
+
+                float dx = end.x - start.x;
+                float dy = end.y - start.y;
+                float length = (float) Math.sqrt(dx * dx + dy * dy);
+
+                if (length < 0.01f) continue;
+
+                float nx = -dy / length;
+                float ny = dx / length;
+
+                float offset = MathUtils.random(-jitterAmount, jitterAmount);
+                x += nx * offset;
+                y += ny * offset;
+
+                points[i].set(x, y);
+            }
+        }
+
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+            Color color = getColor();
+            batch.setColor(color.r, color.g, color.b, color.a * parentAlpha);
+
+            for (int i = 0; i < segments; i++) {
+                Vector2 p1 = points[i];
+                Vector2 p2 = points[i + 1];
+
+                float dx = p2.x - p1.x;
+                float dy = p2.y - p1.y;
+                float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees;
+                float length = Vector2.dst(p1.x, p1.y, p2.x, p2.y);
+
+                batch.draw(texture,
+                    p1.x, p1.y - getHeight() / 2,
+                    0, getHeight() / 2,
+                    length, getHeight(),
+                    1, 1,
+                    angle + 90);
+            }
+
+            batch.setColor(1, 1, 1, 1);
+        }
+
+        @Override
+        public void act(float delta) {
+            super.act(delta);
+
+            jitterTimer += delta;
+            if (jitterTimer >= jitterFrequency) {
+                jitterTimer = 0;
+                generateLightningPoints();
+            }
         }
     }
 

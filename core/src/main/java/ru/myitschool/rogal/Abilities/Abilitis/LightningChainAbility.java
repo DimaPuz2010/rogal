@@ -262,9 +262,251 @@ public class LightningChainAbility extends Ability {
     }
 
     /**
+     * Публичный метод для создания мини-молнии из других способностей
+     *
+     * @param sourceAbility  способность-источник
+     * @param startEnemy     враг, от которого начинается цепь молнии
+     * @param damage         базовый урон мини-молнии
+     * @param miniChainRange дальность прыжка мини-молнии
+     * @param miniJumps      максимальное количество перескоков
+     * @param miniFalloff    коэффициент уменьшения урона
+     */
+    public static void createMiniLightning(Ability sourceAbility, EnemyActor startEnemy,
+                                           float damage, float miniChainRange,
+                                           int miniJumps, float miniFalloff) {
+        if (sourceAbility == null || sourceAbility.owner == null ||
+            sourceAbility.owner.getStage() == null || startEnemy == null) {
+            return;
+        }
+
+        // Создаем массив уже пораженных врагов
+        Array<EnemyActor> hitEnemies = new Array<>();
+        hitEnemies.add(startEnemy);
+
+        // Получаем позицию стартового врага
+        Vector2 enemyPos = new Vector2(startEnemy.getX() + startEnemy.getOriginX(),
+            startEnemy.getY() + startEnemy.getOriginY());
+
+        // Находим следующую цель для молнии
+        EnemyActor nextTarget = findNearestEnemyExcluding(sourceAbility.owner.getStage(),
+            enemyPos, miniChainRange, hitEnemies);
+
+        if (nextTarget != null) {
+            // Координаты следующей цели
+            Vector2 nextPos = new Vector2(nextTarget.getX() + nextTarget.getOriginX(),
+                nextTarget.getY() + nextTarget.getOriginY());
+
+            // Создаем эффект мини-молнии
+            MiniLightningEffect effect = new MiniLightningEffect(enemyPos, nextPos);
+            sourceAbility.owner.getStage().addActor(effect);
+
+            // Наносим урон
+            int lightningDamage = Math.round(damage);
+            nextTarget.takeDamage(lightningDamage);
+            hitEnemies.add(nextTarget);
+
+            LogHelper.log(sourceAbility.getClass().getSimpleName(), "Mini lightning hit for " + lightningDamage + " damage");
+
+            // Продолжаем цепь молнии
+            chainMiniLightning(sourceAbility, nextTarget, hitEnemies, 1, damage * miniFalloff,
+                miniChainRange, miniJumps, miniFalloff);
+        }
+    }
+
+    /**
+     * Публичный метод для рекурсивного продолжения цепи мини-молнии
+     */
+    private static void chainMiniLightning(Ability sourceAbility, EnemyActor currentTarget,
+                                           Array<EnemyActor> hitEnemies, int currentJump,
+                                           float currentDamage, float chainRange,
+                                           int maxJumps, float damageFalloff) {
+        if (currentJump >= maxJumps || sourceAbility.owner == null ||
+            sourceAbility.owner.getStage() == null) {
+            return;
+        }
+
+        Vector2 currentPos = new Vector2(currentTarget.getX() + currentTarget.getOriginX(),
+            currentTarget.getY() + currentTarget.getOriginY());
+
+        EnemyActor nextTarget = findNearestEnemyExcluding(sourceAbility.owner.getStage(),
+            currentPos, chainRange, hitEnemies);
+
+        if (nextTarget == null) {
+            return;
+        }
+
+        Vector2 nextPos = new Vector2(nextTarget.getX() + nextTarget.getOriginX(),
+            nextTarget.getY() + nextTarget.getOriginY());
+
+        MiniLightningEffect effect = new MiniLightningEffect(currentPos, nextPos);
+        sourceAbility.owner.getStage().addActor(effect);
+
+        int damage = Math.round(currentDamage);
+        nextTarget.takeDamage(damage);
+        hitEnemies.add(nextTarget);
+
+        LogHelper.log(sourceAbility.getClass().getSimpleName(), "Mini lightning jump #" + currentJump +
+            " hit target for " + damage + " damage");
+
+        // Продолжаем цепь к следующей цели
+        chainMiniLightning(sourceAbility, nextTarget, hitEnemies, currentJump + 1,
+            currentDamage * damageFalloff, chainRange, maxJumps, damageFalloff);
+    }
+
+    /**
+     * Публичный метод для поиска ближайшего врага, исключая уже пораженных
+     */
+    public static EnemyActor findNearestEnemyExcluding(Stage stage, Vector2 position,
+                                                       float searchRadius, Array<EnemyActor> excludeEnemies) {
+        if (stage == null) return null;
+
+        EnemyActor nearestEnemy = null;
+        float minDistance = Float.MAX_VALUE;
+
+        for (Actor actor : stage.getActors()) {
+            if (actor instanceof EnemyActor) {
+                EnemyActor enemy = (EnemyActor) actor;
+                // Пропускаем уже пораженных врагов
+                if (excludeEnemies.contains(enemy, true)) {
+                    continue;
+                }
+
+                Vector2 enemyPos = new Vector2(enemy.getX() + enemy.getOriginX(),
+                    enemy.getY() + enemy.getOriginY());
+                float distance = position.dst(enemyPos);
+
+                if (distance <= searchRadius && distance < minDistance) {
+                    minDistance = distance;
+                    nearestEnemy = enemy;
+                }
+            }
+        }
+
+        return nearestEnemy;
+    }
+
+    /**
+     * Публичный класс для визуального эффекта мини-молнии
+     * Модифицированная версия обычного эффекта молнии
+     */
+    public static class MiniLightningEffect extends Actor {
+        private final TextureRegion texture;
+        private final Vector2 start = new Vector2();
+        private final Vector2 end = new Vector2();
+        private final float duration = 0.3f;
+        private final int segments = 3;
+        private final Vector2[] points;
+        private final float jitterAmount = 5f;
+        private final float jitterFrequency = 0.05f;
+        private float jitterTimer = 0f;
+
+        /**
+         * Создает визуальный эффект мини-молнии между двумя точками
+         */
+        public MiniLightningEffect(Vector2 start, Vector2 end) {
+            this.start.set(start);
+            this.end.set(end);
+
+            try {
+                this.texture = new TextureRegion(new Texture(Gdx.files.internal("abilities/lightning.png")));
+            } catch (Exception e) {
+                LogHelper.error("MiniLightningEffect", "Failed to load lightning texture", e);
+                throw new RuntimeException("Failed to load lightning texture", e);
+            }
+
+            points = new Vector2[segments + 1];
+            for (int i = 0; i <= segments; i++) {
+                points[i] = new Vector2();
+            }
+
+            generateLightningPoints();
+
+            float width = end.dst(start);
+            float height = 15f;
+
+            setWidth(width);
+            setHeight(height);
+            setPosition(start.x, start.y - height / 2);
+            setColor(0.5f, 0.7f, 1f, 0.8f); // Другой цвет для мини-молнии
+
+            addAction(Actions.sequence(
+                Actions.delay(duration * 0.7f),
+                Actions.fadeOut(duration * 0.3f),
+                Actions.removeActor()
+            ));
+        }
+
+        /**
+         * Генерирует точки для сегментов молнии с случайными отклонениями
+         */
+        private void generateLightningPoints() {
+            points[0].set(start);
+            points[segments].set(end);
+
+            for (int i = 1; i < segments; i++) {
+                float t = (float) i / segments;
+
+                float x = start.x + (end.x - start.x) * t;
+                float y = start.y + (end.y - start.y) * t;
+
+                float dx = end.x - start.x;
+                float dy = end.y - start.y;
+                float length = (float) Math.sqrt(dx * dx + dy * dy);
+
+                if (length < 0.01f) continue;
+
+                float nx = -dy / length;
+                float ny = dx / length;
+
+                float offset = MathUtils.random(-jitterAmount, jitterAmount);
+                x += nx * offset;
+                y += ny * offset;
+
+                points[i].set(x, y);
+            }
+        }
+
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+            Color color = getColor();
+            batch.setColor(color.r, color.g, color.b, color.a * parentAlpha);
+
+            for (int i = 0; i < segments; i++) {
+                Vector2 p1 = points[i];
+                Vector2 p2 = points[i + 1];
+
+                float dx = p2.x - p1.x;
+                float dy = p2.y - p1.y;
+                float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees;
+                float length = Vector2.dst(p1.x, p1.y, p2.x, p2.y);
+
+                batch.draw(texture,
+                    p1.x, p1.y - getHeight() / 2,
+                    0, getHeight() / 2,
+                    length, getHeight(),
+                    1, 1,
+                    angle - 90);
+            }
+
+            batch.setColor(1, 1, 1, 1);
+        }
+
+        @Override
+        public void act(float delta) {
+            super.act(delta);
+
+            jitterTimer += delta;
+            if (jitterTimer >= jitterFrequency) {
+                jitterTimer = 0;
+                generateLightningPoints();
+            }
+        }
+    }
+
+    /**
      * Внутренний класс для визуального эффекта молнии
      */
-    private class LightningEffect extends Actor {
+    public class LightningEffect extends Actor {
         private final TextureRegion texture;
         private final Vector2 start = new Vector2();
         private final Vector2 end = new Vector2();
@@ -315,7 +557,7 @@ public class LightningChainAbility extends Ability {
         /**
          * Генерирует точки для сегментов молнии с случайными отклонениями
          */
-        private void generateLightningPoints() {
+        protected void generateLightningPoints() {
             points[0].set(start);
             points[segments].set(end);
 
@@ -349,7 +591,7 @@ public class LightningChainAbility extends Ability {
 
             for (int i = 0; i < segments; i++) {
                 Vector2 p1 = points[i];
-                Vector2 p2 = points[i+1];
+                Vector2 p2 = points[i + 1];
 
                 float dx = p2.x - p1.x;
                 float dy = p2.y - p1.y;
@@ -357,11 +599,11 @@ public class LightningChainAbility extends Ability {
                 float length = Vector2.dst(p1.x, p1.y, p2.x, p2.y);
 
                 batch.draw(texture,
-                           p1.x, p1.y - getHeight()/2,
-                           0, getHeight()/2,
-                            getHeight()/2, length,
-                           1, 1,
-                           angle-9090);
+                    p1.x, p1.y - getHeight() / 2,
+                    0, getHeight() / 2,
+                    length, getHeight(),
+                    1, 1,
+                    angle - 90);
             }
 
             batch.setColor(1, 1, 1, 1);

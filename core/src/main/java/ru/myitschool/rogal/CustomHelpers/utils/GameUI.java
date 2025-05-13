@@ -911,13 +911,14 @@ public class GameUI implements Disposable {
         // Создаем контейнер для таймера волны
         Table waveTimerTable = new Table();
         waveTimerTable.top().right();
-        waveTimerTable.setPosition(Main.SCREEN_WIDTH - 210, Main.SCREEN_HEIGHT - 30);
+        waveTimerTable.setPosition(Main.SCREEN_WIDTH - 210 * uiScale, Main.SCREEN_HEIGHT - 30 * uiScale);
 
         // Стиль метки для таймера
         Label.LabelStyle timerStyle = new Label.LabelStyle(FontManager.getRegularFont(), Color.WHITE);
 
         // Метка для отображения оставшегося времени
         waveTimerLabel = new Label("Волна 1: 00:00", timerStyle);
+        waveTimerLabel.setFontScale(uiScale);
 
         // Стиль для прогресс-бара
         ProgressBar.ProgressBarStyle progressBarStyle = new ProgressBar.ProgressBarStyle();
@@ -935,15 +936,19 @@ public class GameUI implements Disposable {
         // Создаем прогресс-бар для визуального отображения таймера
         waveTimerBar = new ProgressBar(0, 1, 0.01f, false, progressBarStyle);
         waveTimerBar.setValue(1);
-        waveTimerBar.setWidth(200);
+        float barWidth = 200 * uiScale;
+        float barHeight = 10 * uiScale;
+        waveTimerBar.setWidth(barWidth);
+        waveTimerBar.setHeight(barHeight);
 
         // Метка для отображения перерыва между волнами
         waveBreakLabel = new Label("Следующая волна через: 5", timerStyle);
+        waveBreakLabel.setFontScale(uiScale);
         waveBreakLabel.setVisible(false);
 
         // Добавляем элементы в таблицу
-        waveTimerTable.add(waveTimerLabel).padBottom(5).right().row();
-        waveTimerTable.add(waveTimerBar).width(200).height(10).padBottom(5).right().row();
+        waveTimerTable.add(waveTimerLabel).padBottom(5 * uiScale).right().row();
+        waveTimerTable.add(waveTimerBar).width(barWidth).height(barHeight).padBottom(5 * uiScale).right().row();
         waveTimerTable.add(waveBreakLabel).right();
 
         // Добавляем таблицу в стейдж

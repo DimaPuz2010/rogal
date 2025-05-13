@@ -70,9 +70,17 @@ public class GameScreen implements Screen {
         background = new ParallaxBackground("BG.png", (OrthographicCamera) gameStage.getCamera());
         background.setScale(1.5f);
 
-        // Создаем джойстик
-        Touchpad touchpad = TouchpadHelpers.createTouchpad("joystick-background.png", "joystick-knob.png");
-        touchpad.setPosition(Main.SCREEN_WIDTH - touchpad.getWidth(), touchpad.getY());
+        // Получаем масштаб UI из настроек
+        Preferences preferences = Gdx.app.getPreferences("rogal_settings");
+        float uiScale = preferences.getFloat("ui_scale", 1.0f);
+
+        // Создаем джойстик с учетом масштаба UI
+        Touchpad touchpad = TouchpadHelpers.createScaledTouchpad("joystick-background.png", "joystick-knob.png", uiScale);
+
+        // Позиционируем джойстик с учетом масштаба UI
+        float posX = Main.SCREEN_WIDTH - touchpad.getWidth() - 20 * uiScale;
+        float posY = 20 * uiScale;
+        touchpad.setPosition(posX, posY);
 
         // Проверяем, какой режим управления выбран
         boolean touchControlMode = PlayerData.getControlMode() == 1;
@@ -216,10 +224,6 @@ public class GameScreen implements Screen {
                 LogHelper.log("GameScreen", "Enemy killed, total: " + enemiesKilled);
             }
         });
-
-        // Загружаем настройки и применяем масштаб интерфейса
-        Preferences preferences = Gdx.app.getPreferences("rogal_settings");
-        float uiScale = preferences.getFloat("ui_scale", 1.0f);
 
         // Применяем масштаб к интерфейсу, если он был создан
         if (gameUI != null) {

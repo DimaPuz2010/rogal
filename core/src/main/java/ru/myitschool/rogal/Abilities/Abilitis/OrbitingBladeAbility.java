@@ -86,8 +86,10 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         if (owner == null || owner.getStage() == null) return;
 
         int bladeCount = 1;
-        if (level >= 3) bladeCount = 2;
-        if (level >= 5) bladeCount = 3;
+        if (level >= 2) bladeCount = 2;
+        else if (level >= 3) bladeCount = 3;
+        else if (level >= 4) bladeCount = 4;
+        else if (level >= 5) bladeCount = 5;
 
         float angleStep = 360f / bladeCount;
 
@@ -225,32 +227,20 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
 
         if (level == 2) {
             rotationSpeed *= 1.25f;
-            LogHelper.log("OrbitingBladeAbility", "Rotation speed increased at level 2");
         }
 
         if (level == 3) {
-            LogHelper.log("OrbitingBladeAbility", "Second blade added at level 3");
-
-            if (isActive) {
-                clearBlades();
-                createBladeVisuals();
-            }
-        }
-
-        if (level == 4) {
             damageAmount *= 1.5f;
             areaRadius *= 1.3f;
-            LogHelper.log("OrbitingBladeAbility", "Damage and size significantly increased at level 4");
         }
 
         if (level == 5) {
             orbitRadius *= 1.5f;
-            LogHelper.log("OrbitingBladeAbility", "Orbit radius increased and third blade added at level 5");
+        }
 
-            if (isActive) {
-                clearBlades();
-                createBladeVisuals();
-            }
+        if (isActive) {
+            clearBlades();
+            createBladeVisuals();
         }
     }
 

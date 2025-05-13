@@ -29,7 +29,7 @@ public abstract class Ability {
     protected float currentCooldown = 0f;  // Текущее оставшееся время перезарядки
     protected boolean isActive = false;    // Активна ли способность сейчас
     protected float activeTime = 0f;       // Время, в течение которого способность активна
-    protected PlayerActor owner;           // Владелец способности
+    public PlayerActor owner;           // Владелец способности
 
     /**
      * Конструктор способности
