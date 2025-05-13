@@ -65,12 +65,12 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                 180f,    // Увеличенный радиус действия
                 180f,    // Увеличенный радиус визуального эффекта
                 6.0f,    // Увеличенная длительность эффекта
-                15f,     // Уменьшенное базовое значение исцеления
+            25f,     // Увеличенное базовое значение исцеления
                 "abilities/healing_aura_effect.png");
 
         abilityType = AbilityType.DEFENSIVE;
         energyCost = 25f;
-        healAmount = 15f;
+        healAmount = 25f;  // Увеличенная базовая сила исцеления
         damageAmount = 8f;
         auraDuration = 6f;
 
@@ -286,22 +286,27 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
     @Override
     protected void onLevelUp() {
         cooldown = Math.max(2.0f, cooldown - 0.5f);
-        healAmount *= 1.125f;
-        damageAmount *= 1.125f;
 
-        if (level == 3) {
+        // Усиленное повышение исцеления на низких уровнях
+        if (level == 2) {
+            healAmount *= 1.5f;  // Больший бонус исцеления на 2 уровне
+            damageAmount *= 1.2f;
+            LogHelper.log("HealingAuraAbility", "Healing significantly increased at level 2");
+        } else if (level == 3) {
+            healAmount *= 1.3f;
+            damageAmount *= 1.15f;
             reducesDebuffs = true;
-            LogHelper.log("HealingAuraAbility", "Debuff reduction unlocked at level 3");
-        }
-        if (level == 4) {
-            healAmount *= 1.5f;
-            damageAmount *= 1.5f;
+            LogHelper.log("HealingAuraAbility", "Healing increased and debuff reduction unlocked at level 3");
+        } else if (level == 4) {
+            healAmount *= 1.3f;
+            damageAmount *= 1.25f;
             LogHelper.log("HealingAuraAbility", "Healing and damage increased at level 4");
-        }
-        if (level == 5) {
+        } else if (level == 5) {
+            healAmount *= 1.2f;
+            damageAmount *= 1.2f;
             boostsSpeed = true;
             speedBoostPercent = 20f;
-            LogHelper.log("HealingAuraAbility", "Speed boost unlocked at level 5");
+            LogHelper.log("HealingAuraAbility", "Speed boost unlocked and healing further increased at level 5");
         }
     }
 
@@ -607,6 +612,49 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             if (lifetime <= 0) {
                 remove();
             }
+        }
+    }
+
+    /**
+     * Пытается автоматически активировать ауру исцеления, когда здоровье игрока низкое
+     */
+    public void tryAutoActivate() {
+        if (!autoUse || currentCooldown > 0 || isActive) return;
+        if (owner == null || !(owner instanceof PlayerActor)) return;
+
+        // Получение информации о текущем здоровье игрока
+        int currentHealth = owner.getCurrentHealth();
+        int maxHealth = owner.getMaxHealth();
+
+        // Рассчитываем процент здоровья
+        float healthPercent = (float) currentHealth / maxHealth;
+
+        // Определяем порог активации в зависимости от уровня способности
+        float activationThreshold;
+
+        if (level <= 2) {
+            // На низких уровнях активируем когда HP < 60%
+            activationThreshold = 0.6f;
+        } else if (level <= 4) {
+            // На средних уровнях при HP < 75%
+            activationThreshold = 0.75f;
+        } else {
+            // На высоких уровнях почти всегда активна при HP < 90%
+            activationThreshold = 0.9f;
+        }
+
+        // Проверяем, достаточно ли низкое здоровье для активации
+        if (healthPercent < activationThreshold) {
+            // Активируем способность на позиции игрока
+            Vector2 playerPos = new Vector2(
+                owner.getX() + owner.getWidth() / 2,
+                owner.getY() + owner.getHeight() / 2
+            );
+
+            LogHelper.log("HealingAuraAbility", "Auto-activating healing aura at health: " +
+                currentHealth + "/" + maxHealth + " (" + Math.round(healthPercent * 100) + "%)");
+
+            activate(playerPos);
         }
     }
 }

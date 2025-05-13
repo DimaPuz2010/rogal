@@ -383,7 +383,7 @@ public class UpdateManager {
     /**
      * Получает путь к текущему JAR-файлу игры
      */
-    private String getCurrentJarPath() {
+    public String getCurrentJarPath() {
         try {
             // Получаем путь к текущему JAR-файлу
             String path = Main.class.getProtectionDomain()
@@ -473,6 +473,243 @@ public class UpdateManager {
             }
         } catch (Exception e) {
             LogHelper.log(TAG, "Error when applying the update at startup: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Запускает новую версию приложения и завершает текущую (для десктопа)
+     *
+     * @param newFilePath   путь к новому jar/exe файлу
+     * @param deleteOldFile удалить ли старый файл после запуска
+     */
+    public void launchNewVersionAndExit(String newFilePath, boolean deleteOldFile) {
+        if (Gdx.app.getType() == Application.ApplicationType.Android) return;
+
+        try {
+            LogHelper.log(TAG, "Запуск новой версии: " + newFilePath);
+
+            // Получаем путь к текущему файлу для удаления после запуска
+            String currentPath = getCurrentJarPath();
+            File currentFile = new File(currentPath);
+
+            // Создаем скрипт обновления в зависимости от ОС
+            String scriptExt = System.getProperty("os.name").toLowerCase().contains("win") ? "bat" : "sh";
+            String scriptName = "update_script." + scriptExt;
+            File scriptFile = new File(currentFile.getParentFile(), scriptName);
+
+            LogHelper.log(TAG, "Создание скрипта обновления: " + scriptFile.getAbsolutePath());
+
+            // Формируем содержимое скрипта
+            StringBuilder scriptContent = new StringBuilder();
+
+            if (scriptExt.equals("bat")) {
+                // Windows BAT скрипт
+                scriptContent.append("@echo off\n");
+                scriptContent.append("echo Применение обновления...\n");
+                scriptContent.append("timeout /t 1 /nobreak > nul\n");
+                // Запуск нового файла
+                scriptContent.append("start \"\" \"").append(newFilePath).append("\"\n");
+
+                if (deleteOldFile && currentFile.exists()) {
+                    // Удаление старого файла
+                    scriptContent.append("timeout /t 2 /nobreak > nul\n");
+                    scriptContent.append("del \"").append(currentPath).append("\"\n");
+                }
+
+                // Удаление самого скрипта
+                scriptContent.append("timeout /t 2 /nobreak > nul\n");
+                scriptContent.append("del \"%~f0\"\n");
+            } else {
+                // Unix SH скрипт
+                scriptContent.append("#!/bin/sh\n");
+                scriptContent.append("echo 'Применение обновления...'\n");
+                scriptContent.append("sleep 1\n");
+                // Запуск нового файла
+                scriptContent.append("\"").append(newFilePath).append("\" &\n");
+
+                if (deleteOldFile && currentFile.exists()) {
+                    // Удаление старого файла
+                    scriptContent.append("sleep 2\n");
+                    scriptContent.append("rm \"").append(currentPath).append("\"\n");
+                }
+
+                // Удаление самого скрипта
+                scriptContent.append("sleep 2\n");
+                scriptContent.append("rm \"$0\"\n");
+            }
+
+            // Записываем скрипт
+            try (java.io.FileWriter writer = new java.io.FileWriter(scriptFile)) {
+                writer.write(scriptContent.toString());
+            }
+
+            // Делаем скрипт исполняемым (для Unix)
+            if (!scriptExt.equals("bat")) {
+                scriptFile.setExecutable(true);
+            }
+
+            // Запускаем скрипт обновления
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            if (scriptExt.equals("bat")) {
+                processBuilder.command(scriptFile.getAbsolutePath());
+            } else {
+                processBuilder.command("sh", scriptFile.getAbsolutePath());
+            }
+
+            Process process = processBuilder.start();
+            LogHelper.log(TAG, "Скрипт обновления запущен");
+
+            // Завершаем текущее приложение
+            Thread.sleep(500); // Даем скрипту время запуститься
+            System.exit(0);
+
+        } catch (Exception e) {
+            LogHelper.log(TAG, "Ошибка при запуске новой версии: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Создает временный скрипт обновления
+     *
+     * @return путь к скрипту обновления или null в случае ошибки
+     */
+    public String createUpdateScript() {
+        if (Gdx.app.getType() == Application.ApplicationType.Android) return null;
+
+        try {
+            // Получаем путь к текущему файлу
+            String currentPath = getCurrentJarPath();
+            if (currentPath == null) return null;
+
+            File currentFile = new File(currentPath);
+            File currentDir = currentFile.getParentFile();
+
+            // Создаем скрипт обновления в зависимости от ОС
+            String scriptExt = System.getProperty("os.name").toLowerCase().contains("win") ? "bat" : "sh";
+            String scriptName = "update_helper." + scriptExt;
+            File scriptFile = new File(currentDir, scriptName);
+
+            LogHelper.log(TAG, "Создание скрипта обновления: " + scriptFile.getAbsolutePath());
+
+            // Формируем содержимое скрипта
+            StringBuilder scriptContent = new StringBuilder();
+
+            if (scriptExt.equals("bat")) {
+                // Windows BAT скрипт
+                scriptContent.append("@echo off\n");
+                scriptContent.append("echo Утилита для применения обновлений ROGAL\n");
+                scriptContent.append("echo =======================================\n\n");
+
+                scriptContent.append(":: Проверка наличия параметров\n");
+                scriptContent.append("if \"%~1\"==\"\" (\n");
+                scriptContent.append("    echo Ошибка: не указан файл новой версии\n");
+                scriptContent.append("    echo Использование: %~nx0 путь_к_новому_файлу [старый_файл_для_удаления]\n");
+                scriptContent.append("    pause\n");
+                scriptContent.append("    exit /b 1\n");
+                scriptContent.append(")\n\n");
+
+                scriptContent.append(":: Проверка существования нового файла\n");
+                scriptContent.append("if not exist \"%~1\" (\n");
+                scriptContent.append("    echo Ошибка: файл новой версии не найден: %~1\n");
+                scriptContent.append("    pause\n");
+                scriptContent.append("    exit /b 1\n");
+                scriptContent.append(")\n\n");
+
+                scriptContent.append("echo Ожидание завершения работы предыдущей версии...\n");
+                scriptContent.append("timeout /t 2 /nobreak > nul\n\n");
+
+                scriptContent.append(":: Удаление старого файла, если он указан\n");
+                scriptContent.append("if not \"%~2\"==\"\" (\n");
+                scriptContent.append("    if exist \"%~2\" (\n");
+                scriptContent.append("        echo Удаление старой версии: %~2\n");
+                scriptContent.append("        del \"%~2\"\n");
+                scriptContent.append("        if errorlevel 1 (\n");
+                scriptContent.append("            echo Предупреждение: не удалось удалить старый файл\n");
+                scriptContent.append("        )\n");
+                scriptContent.append("    ) else (\n");
+                scriptContent.append("        echo Старый файл не найден: %~2\n");
+                scriptContent.append("    )\n");
+                scriptContent.append(")\n\n");
+
+                scriptContent.append(":: Запуск новой версии\n");
+                scriptContent.append("echo Запуск новой версии: %~1\n");
+                scriptContent.append("start \"\" \"%~1\"\n");
+                scriptContent.append("if errorlevel 1 (\n");
+                scriptContent.append("    echo Ошибка при запуске новой версии!\n");
+                scriptContent.append("    pause\n");
+                scriptContent.append("    exit /b 1\n");
+                scriptContent.append(")\n\n");
+
+                scriptContent.append("echo Обновление успешно применено.\n");
+                scriptContent.append("timeout /t 3 /nobreak > nul\n");
+                scriptContent.append("exit /b 0\n");
+            } else {
+                // Unix SH скрипт
+                scriptContent.append("#!/bin/sh\n\n");
+                scriptContent.append("echo \"Утилита для применения обновлений ROGAL\"\n");
+                scriptContent.append("echo \"=======================================\"\n\n");
+
+                scriptContent.append("# Проверка наличия параметров\n");
+                scriptContent.append("if [ -z \"$1\" ]; then\n");
+                scriptContent.append("    echo \"Ошибка: не указан файл новой версии\"\n");
+                scriptContent.append("    echo \"Использование: $0 путь_к_новому_файлу [старый_файл_для_удаления]\"\n");
+                scriptContent.append("    exit 1\n");
+                scriptContent.append("fi\n\n");
+
+                scriptContent.append("# Проверка существования нового файла\n");
+                scriptContent.append("if [ ! -f \"$1\" ]; then\n");
+                scriptContent.append("    echo \"Ошибка: файл новой версии не найден: $1\"\n");
+                scriptContent.append("    exit 1\n");
+                scriptContent.append("fi\n\n");
+
+                scriptContent.append("# Ожидание завершения работы предыдущей версии...\n");
+                scriptContent.append("sleep 2\n\n");
+
+                scriptContent.append("# Удаление старого файла, если он указан\n");
+                scriptContent.append("if [ ! -z \"$2\" ]; then\n");
+                scriptContent.append("    if [ -f \"$2\" ]; then\n");
+                scriptContent.append("        echo \"Удаление старой версии: $2\"\n");
+                scriptContent.append("        rm \"$2\"\n");
+                scriptContent.append("        if [ $? -ne 0 ]; then\n");
+                scriptContent.append("            echo \"Предупреждение: не удалось удалить старый файл\"\n");
+                scriptContent.append("        fi\n");
+                scriptContent.append("    else\n");
+                scriptContent.append("        echo \"Старый файл не найден: $2\"\n");
+                scriptContent.append("    fi\n");
+                scriptContent.append("fi\n\n");
+
+                scriptContent.append("# Делаем новый файл исполняемым\n");
+                scriptContent.append("chmod +x \"$1\"\n\n");
+
+                scriptContent.append("# Запуск новой версии\n");
+                scriptContent.append("echo \"Запуск новой версии: $1\"\n");
+                scriptContent.append("\"$1\" &\n");
+                scriptContent.append("if [ $? -ne 0 ]; then\n");
+                scriptContent.append("    echo \"Ошибка при запуске новой версии!\"\n");
+                scriptContent.append("    exit 1\n");
+                scriptContent.append("fi\n\n");
+
+                scriptContent.append("echo \"Обновление успешно применено.\"\n");
+                scriptContent.append("sleep 3\n");
+                scriptContent.append("exit 0\n");
+            }
+
+            // Записываем скрипт
+            try (java.io.FileWriter writer = new java.io.FileWriter(scriptFile)) {
+                writer.write(scriptContent.toString());
+            }
+
+            // Делаем скрипт исполняемым (для Unix)
+            if (!scriptExt.equals("bat")) {
+                scriptFile.setExecutable(true);
+            }
+
+            LogHelper.log(TAG, "Скрипт обновления создан: " + scriptFile.getAbsolutePath());
+            return scriptFile.getAbsolutePath();
+
+        } catch (Exception e) {
+            LogHelper.log(TAG, "Ошибка при создании скрипта обновления: " + e.getMessage());
+            return null;
         }
     }
 

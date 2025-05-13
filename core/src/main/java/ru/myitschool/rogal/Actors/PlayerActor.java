@@ -2,6 +2,7 @@ package ru.myitschool.rogal.Actors;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Intersector;
@@ -38,6 +39,8 @@ public class PlayerActor extends Actor {
     TextureRegion texture;
     Polygon hitbox;
     public static final float SCALE = 0.1f;
+
+    private static final int MAX_SHIP_LEVEL = 5; // Максимальный уровень текстуры корабля
 
     // Атрибуты персонажа
     private int maxHealth = 120;
@@ -85,6 +88,14 @@ public class PlayerActor extends Actor {
     // Время последнего получения урона
     private float lastDamageTime = 0f;
     private float gameTime = 0f;
+    private static final int LEVELS_PER_SHIP_UPGRADE = 6; // Количество уровней игрока на одну текстуру
+    // Добавим переменную для хранения текущей активной текстуры
+    private TextureRegion currentActiveTexture;
+    // Добавляем переменные для системы текстур в зависимости от уровня
+    private int shipLevel = 1; // Текущий уровень корабля (от 1 до 5)
+    private Animation<TextureRegion> exhaustAnimation; // Анимация выхлопа двигателя
+    private float animationTime = 0f; // Время для анимации
+    private Texture shipTexture; // Текстура корабля
 
     private interface AbilityConstructor {
         Ability create();
@@ -111,8 +122,17 @@ public class PlayerActor extends Actor {
     private DeathHandler deathHandler;
 
     public PlayerActor(final String texturePath, final Touchpad touchpad) {
-        Texture tex = new Texture(texturePath);
-        this.texture = new TextureRegion(tex);
+        // Определяем начальный уровень корабля на основе уровня игрока в PlayerData
+        int playerLevel = PlayerData.getPlayerLevel();
+        if (playerLevel <= 0) playerLevel = 1; // Защита от некорректных данных
+
+        // Вычисляем уровень корабля на основе уровня игрока
+        this.shipLevel = Math.min(((playerLevel - 1) / LEVELS_PER_SHIP_UPGRADE) + 1, MAX_SHIP_LEVEL);
+
+        // Загружаем текстуры для нужного уровня корабля
+        loadShipTextures();
+
+        // Теперь texture инициализируется в loadShipTextures()
         this.touchpad = touchpad;
 
         // Устанавливаем режим управления из настроек
@@ -126,12 +146,12 @@ public class PlayerActor extends Actor {
         setOriginX(getWidth()/2);
         setOriginY(getHeight()/2);
 
-        hitbox = HitboxHelper.createHitboxFromTexture(tex, SCALE, 12);
+        // Создаем хитбокс на основе текстуры корабля
+        hitbox = HitboxHelper.createHitboxFromTexture(shipTexture, SCALE, 12);
         hitbox.setOrigin(getOriginX(), getOriginY());
 
         // Применяем улучшения из сохраненных данных
         PlayerData.applyUpgradesToPlayer(this);
-
 
         abilityManager = new AbilityManager(this);
         initAvailableAbilities();
@@ -140,6 +160,62 @@ public class PlayerActor extends Actor {
 
         if (abilityManager != null) {
             abilityManager.enableAutoUseForAll();
+        }
+
+        LogHelper.log("PlayerActor", "Created player with ship level " + shipLevel);
+    }
+
+    /**
+     * Загружает текстуры корабля и анимацию выхлопа для текущего уровня корабля
+     */
+    private void loadShipTextures() {
+        // Очищаем предыдущие текстуры, если есть
+        if (shipTexture != null) {
+            shipTexture.dispose();
+        }
+
+        // Загружаем статичную текстуру корабля для текущего уровня
+        String shipTexturePath = "Texture/Player/lv" + shipLevel + "/Ship.png";
+        shipTexture = new Texture(Gdx.files.internal(shipTexturePath));
+        this.texture = new TextureRegion(shipTexture);
+
+        // Устанавливаем текущую активную текстуру
+        this.currentActiveTexture = this.texture;
+
+        // Загружаем кадры анимации Exhaust (полное изображение корабля с выхлопом)
+        Array<TextureRegion> exhaustFrames = new Array<>();
+
+        // Определяем правильный префикс файла, для 3-го уровня это Exhaust_3_1_, для остальных Exhaust_X_2_
+        String filePattern = (shipLevel == 3) ?
+            "Exhaust_" + shipLevel + "_1_" :
+            "Exhaust_" + shipLevel + "_2_";
+
+        LogHelper.log("PlayerActor", "Searching for animation frames with pattern: " + filePattern);
+
+        for (int i = 0; i < 10; i++) {
+            String framePath = "Texture/Player/lv" + shipLevel + "/" + filePattern + String.format("%03d", i) + ".png";
+            if (Gdx.files.internal(framePath).exists()) {
+                Texture frameTexture = new Texture(Gdx.files.internal(framePath));
+                exhaustFrames.add(new TextureRegion(frameTexture));
+                LogHelper.log("PlayerActor", "Found frame: " + framePath);
+            } else {
+                LogHelper.error("PlayerActor", "Missing exhaust animation frame: " + framePath);
+            }
+        }
+
+        // Устанавливаем начальные размеры и хитбокс на основе статичной текстуры
+        // Увеличим количество точек аппроксимации для больших текстур
+        updateHitbox(this.texture);
+
+        // Создаем анимацию из кадров только если есть хотя бы один кадр
+        if (exhaustFrames.size > 0) {
+            exhaustAnimation = new Animation<>(0.05f, exhaustFrames, Animation.PlayMode.LOOP);
+            LogHelper.log("PlayerActor", "Loaded textures for ship level " + shipLevel +
+                " with " + exhaustFrames.size + " animation frames");
+        } else {
+            // Если нет кадров анимации, установим анимацию в null
+            exhaustAnimation = null;
+            LogHelper.error("PlayerActor", "No animation frames found for ship level " + shipLevel);
         }
     }
 
@@ -155,13 +231,16 @@ public class PlayerActor extends Actor {
         availableAbilities.add(Relsatron::new);
     }
 
-
-
     @Override
     public void act(final float delta) {
         super.act(delta);
 
         gameTime += delta;
+        // Обновляем время анимации
+        animationTime += delta;
+
+        // Определяем, какую текстуру использовать в данный момент
+        updateActiveTexture();
 
         boolean isAbilitySelectionActive = false;
         if (gameUI != null) {
@@ -259,6 +338,68 @@ public class PlayerActor extends Actor {
     }
 
     /**
+     * Обновляет активную текстуру на основе состояния движения
+     */
+    private void updateActiveTexture() {
+        // Всегда используем анимацию выхлопа, если она доступна
+        TextureRegion newActiveTexture = texture;
+
+        if (exhaustAnimation != null) {
+            try {
+                newActiveTexture = exhaustAnimation.getKeyFrame(animationTime);
+            } catch (Exception e) {
+                LogHelper.error("PlayerActor", "Error getting animation frame: " + e.getMessage());
+                // В случае ошибки анимации используем статичную текстуру
+                exhaustAnimation = null;
+            }
+        }
+
+        // Если текстура изменилась или активная текстура еще не установлена, обновляем размеры и хитбокс
+        if (currentActiveTexture != newActiveTexture || currentActiveTexture == null) {
+            currentActiveTexture = newActiveTexture;
+            // Обновляем размеры объекта на основе текущей текстуры
+            setWidth(currentActiveTexture.getRegionWidth() * SCALE);
+            setHeight(currentActiveTexture.getRegionHeight() * SCALE);
+            setOriginX(getWidth() / 2);
+            setOriginY(getHeight() / 2);
+
+            hitbox.setOrigin(getOriginX(), getOriginY());
+            hitbox.setPosition(getX(), getY());
+            hitbox.setRotation(getRotation() + 90);
+        }
+    }
+
+    /**
+     * Обновляет размеры и хитбокс в соответствии с текущей текстурой
+     *
+     * @param textureRegion текстура для обновления размеров
+     */
+    private void updateHitbox(TextureRegion textureRegion) {
+        if (textureRegion == null) return;
+
+        // Создаем новый хитбокс на основе текущей текстуры
+        if (hitbox != null) {
+            // Получаем текстуру для создания хитбокса
+            Texture hitboxTexture = textureRegion.getTexture();
+
+            // Увеличиваем количество точек аппроксимации для больших текстур
+            int width = hitboxTexture.getWidth();
+            // Чем больше текстура, тем больше точек аппроксимации, но не меньше 12
+            int approximation = Math.max(20, width / 50);
+
+            // Создаем хитбокс с адаптивным количеством точек аппроксимации
+            hitbox = HitboxHelper.createHitboxFromTexture(hitboxTexture, SCALE, approximation);
+            hitbox.setOrigin(getOriginX(), getOriginY());
+            // Устанавливаем позицию хитбокса
+            hitbox.setPosition(getX(), getY());
+            hitbox.setRotation(getRotation() + 90);
+
+            LogHelper.log("PlayerActor", "Created hitbox with approximation: " + approximation +
+                " for texture size: " + width + "x" + hitboxTexture.getHeight());
+        }
+    }
+
+    /**
      * Добавляет дебафф игроку
      * @param id уникальный идентификатор дебаффа
      * @param name название дебаффа
@@ -345,8 +486,9 @@ public class PlayerActor extends Actor {
 
     @Override
     public void draw(final Batch batch, final float parentAlpha) {
+        // Используем текущую активную текстуру, которая была обновлена в методе act
         batch.draw(
-            texture,
+            currentActiveTexture,
             getX(),
             getY(),
             getOriginX(),
@@ -419,34 +561,46 @@ public class PlayerActor extends Actor {
      * Повышает уровень персонажа
      */
     private void levelUp() {
+        if (level >= MAX_LEVEL) {
+            return;
+        }
+
         level++;
 
-        // Улучшаем характеристики персонажа
-        int oldMaxHealth = maxHealth;
+        // Увеличиваем атрибуты персонажа
         maxHealth += HEALTH_PER_LEVEL;
-        currentHealth += (maxHealth - oldMaxHealth);
-
+        currentHealth = maxHealth; // Восстанавливаем здоровье при повышении уровня
         healthRegeneration += REGEN_PER_LEVEL;
-        energyRegeneration += ENERGY_REGEN_PER_LEVEL;
         maxEnergy += ENERGY_PER_LEVEL;
+        currentEnergy = maxEnergy; // Восстанавливаем энергию при повышении уровня
+        energyRegeneration += ENERGY_REGEN_PER_LEVEL;
         SPEED += SPEED_PER_LEVEL;
-        cooldownMultiplier -= COOLDOWN_REDUCTION_PER_LEVEL;
+        cooldownMultiplier -= COOLDOWN_REDUCTION_PER_LEVEL; // Уменьшаем кулдаун
 
-        // Активируем энергетическую батарею при повышении уровня
-        activateEnergyBattery();
+        // Шкалирование опыта для следующего уровня
+        experienceToNextLevel = (int) (experienceToNextLevel * EXP_SCALING);
 
-        // Восстанавливаем полную энергию при повышении уровня
-        restoreFullEnergy();
+        // Получаем доступные для улучшения способности
+        ArrayList<Ability> upgradableAbilities = getUpgradableAbilities();
 
-        // Рассчитываем новое требование опыта если уровень не максимальный
-        if (level < MAX_LEVEL) {
-            experienceToNextLevel = Math.round(experienceToNextLevel * EXP_SCALING);
-        }
+        // Проверяем, обновилась ли текстура корабля
+        checkShipLevelUpgrade();
 
-        if (gameUI != null) {
-            gameUI.showLevelUpMessage(level);
+        if (!upgradableAbilities.isEmpty() && gameUI != null) {
+            // Предлагаем выбор улучшения способности
             offerAbilityChoice();
+        } else if (upgradableAbilities.isEmpty() && gameUI != null) {
+            // Если нельзя улучшить существующие способности, предлагаем новые
+            if (abilityManager.getAbilities().size < AbilityManager.MAX_ABILITIES) {
+                offerAbilityChoice();
+            }
         }
+
+        LogHelper.log("PlayerActor", "Level UP! Current level: " + level);
+
+        // Сохраняем данные игрока
+        PlayerData.savePlayerLevel(level);
+        updateUIData();
     }
 
     /**
@@ -1247,5 +1401,20 @@ public class PlayerActor extends Actor {
      */
     public interface DeathHandler {
         void onPlayerDeath();
+    }
+
+    /**
+     * Проверяет необходимость изменения текстуры корабля при повышении уровня
+     */
+    private void checkShipLevelUpgrade() {
+        // Вычисляем новый уровень корабля на основе уровня игрока
+        int newShipLevel = Math.min(((level - 1) / LEVELS_PER_SHIP_UPGRADE) + 1, MAX_SHIP_LEVEL);
+
+        // Если уровень корабля изменился, обновляем текстуры
+        if (newShipLevel != shipLevel) {
+            shipLevel = newShipLevel;
+            loadShipTextures();
+
+        }
     }
 }

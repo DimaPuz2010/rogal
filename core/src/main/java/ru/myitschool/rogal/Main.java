@@ -1,9 +1,11 @@
 package ru.myitschool.rogal;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 
+import java.io.File;
 import java.util.Properties;
 
 import ru.myitschool.rogal.CustomHelpers.utils.FontManager;
@@ -17,20 +19,31 @@ public class Main extends Game {
     public static final int SCREEN_WIDTH = 1280;
     public static final int SCREEN_HEIGHT = 720;
 
-    public static String VERSION;
+    public static String VERSION = "1.0.8";
 
     @Override
     public void create() {
-        loadVersion();
+        Gdx.app.setLogLevel(Application.LOG_DEBUG);
+        LogHelper.log("Main", "Игра запущена. Версия: " + VERSION);
 
+        // Проверяем и применяем обновление при запуске, если оно есть
+        UpdateManager.getInstance().applyPendingUpdateIfExists();
+
+        // Проверяем наличие старых файлов для удаления
+        cleanupOldFiles();
+
+        // Проверяем обновления
+        UpdateManager.getInstance().checkForUpdates();
+
+        // Загрузка шрифтов
         FontManager.initialize();
+
+        loadVersion();
 
         PlayerData.initialize();
 
         LeaderboardAPI.initialize();
 
-        UpdateManager.getInstance().applyPendingUpdateIfExists();
-        UpdateManager.getInstance().checkForUpdates();
         // Переход на начальный экран
         setScreen(new StartScreen(this));
 
@@ -79,6 +92,46 @@ public class Main extends Game {
             }
         } catch (Exception e) {
             LogHelper.log("Main", "Ошибка при загрузке версии: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Очищает старые файлы после обновления
+     */
+    private void cleanupOldFiles() {
+        if (Gdx.app.getType() == Application.ApplicationType.Android) return;
+
+        try {
+            // Получаем текущую директорию
+            String currentJarPath = UpdateManager.getInstance().getCurrentJarPath();
+            if (currentJarPath == null) return;
+
+            File currentDir = new File(currentJarPath).getParentFile();
+            LogHelper.log("Main", "Проверка файлов для очистки в директории: " + currentDir.getAbsolutePath());
+
+            // Ищем резервные копии и временные файлы
+            File[] oldFiles = currentDir.listFiles((dir, name) -> {
+                return name.endsWith(".backup") || name.endsWith(".bak") ||
+                    name.startsWith("update_script.") || name.contains(".old.");
+            });
+
+            if (oldFiles != null && oldFiles.length > 0) {
+                LogHelper.log("Main", "Найдено " + oldFiles.length + " файлов для удаления");
+
+                for (File file : oldFiles) {
+                    try {
+                        boolean deleted = file.delete();
+                        LogHelper.log("Main", "Удаление файла " + file.getName() + ": " +
+                            (deleted ? "успешно" : "не удалось"));
+                    } catch (Exception e) {
+                        LogHelper.log("Main", "Ошибка при удалении файла " + file.getName() + ": " + e.getMessage());
+                    }
+                }
+            } else {
+                LogHelper.log("Main", "Старых файлов не найдено");
+            }
+        } catch (Exception e) {
+            LogHelper.log("Main", "Ошибка при очистке старых файлов: " + e.getMessage());
         }
     }
 

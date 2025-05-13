@@ -459,16 +459,16 @@ public class EnemyManager implements Disposable {
         String texturePath;
         switch (enemyType) {
             case FAST:
-                texturePath = "Ship_02.png"; // Быстрый, но слабый враг
+                texturePath = "Texture\\Enemy\\Ship_06.png"; // Быстрый, но слабый враг
                 break;
             case TANK:
-                texturePath = "Ship_05.png"; // Медленный, но с высоким здоровьем враг
+                texturePath = "Texture\\Enemy\\Ship_04.png"; // Медленный, но с высоким здоровьем враг
                 break;
             case ELITE:
-                texturePath = "Ship_01.png"; // Элитный враг с повышенными характеристиками
+                texturePath = "Texture\\Enemy\\Ship_03.png"; // Элитный враг с повышенными характеристиками
                 break;
             default:
-                texturePath = "Damaged_Ship_03.png"; // Обычный враг
+                texturePath = "Texture\\Enemy\\Ship_01.png"; // Обычный враг
                 break;
         }
 
