@@ -164,6 +164,7 @@ public class GameUI implements Disposable {
         mainTable.add(uiContainer);
         stage.addActor(mainTable);
     }
+
     private void createLeftSection() {
         // Портрет игрока
         Image portrait = new Image(player.getTexture());
