@@ -186,7 +186,7 @@ public class PlayerActor extends Actor {
         Array<TextureRegion> exhaustFrames = new Array<>();
 
         // Определяем правильный префикс файла, для 3-го уровня это Exhaust_3_1_, для остальных Exhaust_X_2_
-        String filePattern = (shipLevel == 3) ?
+        String filePattern = (shipLevel == 3 || shipLevel == 5) ?
             "Exhaust_" + shipLevel + "_1_" :
             "Exhaust_" + shipLevel + "_2_";
 
