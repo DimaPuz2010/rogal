@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Timer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -161,19 +162,15 @@ public class PlayerActor extends Actor {
         String shipTexturePath = "Texture/Player/lv" + shipLevel + "/Ship.png";
         shipTexture = new Texture(Gdx.files.internal(shipTexturePath));
         this.texture = new TextureRegion(shipTexture);
-
-        // Устанавливаем текущую активную текстуру
         this.currentActiveTexture = this.texture;
 
-        // Загружаем кадры анимации Exhaust (полное изображение корабля с выхлопом)
+        // Загружаем кадры анимации Exhaust
         Array<TextureRegion> exhaustFrames = new Array<>();
 
         // Определяем правильный префикс файла, для 3-го уровня это Exhaust_3_1_, для остальных Exhaust_X_2_
         String filePattern = (shipLevel == 3 || shipLevel == 5) ?
             "Exhaust_" + shipLevel + "_1_" :
             "Exhaust_" + shipLevel + "_2_";
-
-        LogHelper.log("PlayerActor", "Searching for animation frames with pattern: " + filePattern);
 
         for (int i = 0; i < 10; i++) {
             String framePath = "Texture/Player/lv" + shipLevel + "/" + filePattern + String.format("%03d", i) + ".png";
@@ -324,7 +321,6 @@ public class PlayerActor extends Actor {
      * Обновляет активную текстуру на основе состояния движения
      */
     private void updateActiveTexture() {
-        // Всегда используем анимацию выхлопа, если она доступна
         TextureRegion newActiveTexture = texture;
 
         if (exhaustAnimation != null) {
@@ -782,9 +778,34 @@ public class PlayerActor extends Actor {
     private void onDeath() {
         LogHelper.log("PlayerActor", "Player died!");
 
-        if (deathHandler != null) {
-            deathHandler.onPlayerDeath();
+        isMovingToTarget = false;
+        setSpeed(0);
+
+        String filePattern = "Explosion_" + shipLevel + "_" ;
+        Array<TextureRegion> exhaustFrames = new Array<>();
+        for (int i = 0; i < 10; i++) {
+            String framePath = "Texture/Player/lv" + shipLevel + "/" + filePattern + String.format("%03d", i) + ".png";
+            if (Gdx.files.internal(framePath).exists()) {
+                Texture frameTexture = new Texture(Gdx.files.internal(framePath));
+                exhaustFrames.add(new TextureRegion(frameTexture));
+            } else {
+                LogHelper.error("PlayerActor", "Missing exhaust animation frame: " + framePath);
+            }
         }
+
+        if (exhaustFrames.size > 0) {
+            exhaustAnimation = new Animation<>(0.1f, exhaustFrames, Animation.PlayMode.LOOP);
+        } else {
+            exhaustAnimation = null;
+            LogHelper.error("PlayerActor", "No animation frames found for ship level " + shipLevel);
+        }
+
+        Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                deathHandler.onPlayerDeath();
+            }
+        }, 1);
     }
 
     /**
@@ -1392,7 +1413,7 @@ public class PlayerActor extends Actor {
         int newShipLevel = Math.min(((level - 1) / LEVELS_PER_SHIP_UPGRADE) + 1, MAX_SHIP_LEVEL);
 
         // Если уровень корабля изменился, обновляем текстуры
-        if (newShipLevel != shipLevel) {
+        if (newShipLevel != shipLevel && currentHealth > 0) {
             shipLevel = newShipLevel;
             loadShipTextures();
         }
