@@ -156,10 +156,6 @@ public class PlayerActor extends Actor {
      * Загружает текстуры корабля и анимацию выхлопа для текущего уровня корабля
      */
     private void loadShipTextures() {
-        // Очищаем предыдущие текстуры, если есть
-        if (shipTexture != null) {
-            shipTexture.dispose();
-        }
 
         // Загружаем статичную текстуру корабля для текущего уровня
         String shipTexturePath = "Texture/Player/lv" + shipLevel + "/Ship.png";
