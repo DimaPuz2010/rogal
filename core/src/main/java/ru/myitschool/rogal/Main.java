@@ -19,35 +19,25 @@ public class Main extends Game {
     public static final int SCREEN_WIDTH = 1280;
     public static final int SCREEN_HEIGHT = 720;
 
-    public static String VERSION = "1.0.8";
+    public static String VERSION = "1.0.9";
 
     @Override
     public void create() {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         LogHelper.log("Main", "Игра запущена. Версия: " + VERSION);
 
-        // Проверяем и применяем обновление при запуске, если оно есть
         UpdateManager.getInstance().applyPendingUpdateIfExists();
-
-        // Проверяем наличие старых файлов для удаления
-        cleanupOldFiles();
-
-        // Проверяем обновления
         UpdateManager.getInstance().checkForUpdates();
 
-        // Загрузка шрифтов
+        cleanupOldFiles();
+
         FontManager.initialize();
-
         loadVersion();
-
         PlayerData.initialize();
-
         LeaderboardAPI.initialize();
 
-        // Переход на начальный экран
         setScreen(new StartScreen(this));
 
-        // Логируем информацию о запуске
         LogHelper.log("Main", "Game initialized with version " + VERSION);
     }
 

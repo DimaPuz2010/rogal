@@ -158,17 +158,15 @@ public class GameUI implements Disposable {
         // Добавляем секции в горизонтальный layout
         horizontalLayout.add(leftSection).padRight(20);
         horizontalLayout.add(rightSection).padLeft(10);
-
         // Собираем интерфейс
         backgroundPanel.add(horizontalLayout);
         uiContainer.add(backgroundPanel);
         mainTable.add(uiContainer);
         stage.addActor(mainTable);
     }
-
     private void createLeftSection() {
         // Портрет игрока
-        Image portrait = new Image(new Texture("Ship_LVL_1.png"));
+        Image portrait = new Image(player.getTexture());
         leftSection.add(portrait).size(100).padBottom(15).row();
 
         // Процент опыта

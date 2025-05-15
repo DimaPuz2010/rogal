@@ -24,7 +24,6 @@ public class PlayerData {
     private static final String PREF_KEY_FREE_ABILITIES = "free_abilities";
     private static final String PREF_KEY_PLAYER_NAME = "player_name";
     private static final String PREF_KEY_CONTROL_MODE = "control_mode";
-    private static final String PREF_KEY_PLAYER_LEVEL = "player_level";
 
     // Стоимость улучшений (увеличивается с каждым уровнем)
     private static final int BASE_HEALTH_UPGRADE_COST = 100;
@@ -77,7 +76,6 @@ public class PlayerData {
         prefs.putInteger(PREF_KEY_BEST_WAVE, 0);
         prefs.putBoolean(PREF_KEY_FREE_ABILITIES, false); // По умолчанию способности тратят энергию
         prefs.putInteger(PREF_KEY_CONTROL_MODE, 0); // По умолчанию используется режим джойстика
-        prefs.putInteger(PREF_KEY_PLAYER_LEVEL, 1);
         prefs.flush();
 
         LogHelper.log("PlayerData", "Reset player data to defaults");
@@ -490,26 +488,6 @@ public class PlayerData {
         prefs.putInteger(PREF_KEY_CONTROL_MODE, mode);
         prefs.flush();
         LogHelper.log("PlayerData", "Control mode set to: " + mode);
-    }
-
-    /**
-     * Получает уровень игрока
-     *
-     * @return текущий уровень
-     */
-    public static int getPlayerLevel() {
-        return prefs.getInteger(PREF_KEY_PLAYER_LEVEL, 1);
-    }
-
-    /**
-     * Сохраняет уровень игрока
-     *
-     * @param level новый уровень игрока
-     */
-    public static void savePlayerLevel(int level) {
-        prefs.putInteger(PREF_KEY_PLAYER_LEVEL, level);
-        prefs.flush();
-        LogHelper.log("PlayerData", "Saved player level: " + level);
     }
 
     public enum DebuffType {

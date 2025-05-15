@@ -318,7 +318,7 @@ public class GameScreen implements Screen {
         if (debugMode) {
             // Обработка нажатия клавиш для тестовых действий
             if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
-                player.addExperience(100);
+                player.addExperience(1000);
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
                 player.takeDamage(50);

@@ -1,0 +1,133 @@
+-- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:34:7-42:18
+	android:grantUriPermissions
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:38:11-45
+	android:authorities
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:36:11-58
+	android:exported
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:37:11-35
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:35:11-60
+manifest
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:2:1-46:12
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:2:1-46:12
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:2:1-46:12
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:2:1-46:12
+MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:2:1-13:12
+MERGED from [androidx.core:core:1.7.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:17:1-26:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.3.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\82f33f404611ecdb33566ce3c005b9ea\transformed\lifecycle-runtime-2.3.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\5df48f6696b944f805f7daa49922eab6\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.arch.core:core-runtime:2.1.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\ae32eae876f84a5105bc83d83a26904a\transformed\core-runtime-2.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.annotation:annotation-experimental:1.1.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\71528fbbd625da86f0675f2a934feea4\transformed\annotation-experimental-1.1.0\AndroidManifest.xml:17:1-24:12
+	package
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:4:5-34
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+	android:versionName
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+	xmlns:tools
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:3:5-51
+	android:versionCode
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+	xmlns:android
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:2:11-69
+uses-feature#0x00020000
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:5:3-75
+MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:9:5-11:35
+MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:9:5-11:35
+	android:glEsVersion
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:5:17-49
+	android:required
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:5:50-73
+uses-permission#android.permission.INTERNET
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:6:5-67
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:6:22-64
+uses-permission#android.permission.REQUEST_INSTALL_PACKAGES
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:7:5-83
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:7:22-80
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:8:5-10:38
+	android:maxSdkVersion
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:10:9-35
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:9:9-65
+application
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:11:3-44:17
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:11:3-44:17
+MERGED from [androidx.core:core:1.7.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:24:5-89
+MERGED from [androidx.core:core:1.7.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:24:5-89
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\5df48f6696b944f805f7daa49922eab6\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\5df48f6696b944f805f7daa49922eab6\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+	android:extractNativeLibs
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.7.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:24:18-86
+	android:label
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:17:7-39
+	android:fullBackupContent
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:13:7-39
+	android:appCategory
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:16:7-33
+	tools:ignore
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:18:7-37
+	android:icon
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:14:7-43
+	android:allowBackup
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:12:7-33
+	android:theme
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:19:7-38
+	android:isGame
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:15:7-28
+activity#ru.myitschool.rogal.android.AndroidLauncher
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:20:5-31:16
+	android:screenOrientation
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:23:9-46
+	android:label
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:22:9-41
+	android:launchMode
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:25:9-40
+	android:exported
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:26:9-32
+	android:configChanges
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:24:9-129
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:21:9-67
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:27:9-30:23
+action#android.intent.action.MAIN
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:28:9-60
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:28:17-58
+category#android.intent.category.LAUNCHER
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:29:9-68
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:29:19-66
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:39:11-41:52
+	android:resource
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:41:15-49
+	android:name
+		ADDED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml:40:15-65
+uses-sdk
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:5:5-7:41
+MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.core:core:1.7.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core:1.7.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.3.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\82f33f404611ecdb33566ce3c005b9ea\transformed\lifecycle-runtime-2.3.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.3.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\82f33f404611ecdb33566ce3c005b9ea\transformed\lifecycle-runtime-2.3.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\5df48f6696b944f805f7daa49922eab6\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Student\.gradle\caches\8.11.1\transforms\5df48f6696b944f805f7daa49922eab6\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.arch.core:core-runtime:2.1.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\ae32eae876f84a5105bc83d83a26904a\transformed\core-runtime-2.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.arch.core:core-runtime:2.1.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\ae32eae876f84a5105bc83d83a26904a\transformed\core-runtime-2.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.annotation:annotation-experimental:1.1.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\71528fbbd625da86f0675f2a934feea4\transformed\annotation-experimental-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.annotation:annotation-experimental:1.1.0] C:\Users\Student\.gradle\caches\8.11.1\transforms\71528fbbd625da86f0675f2a934feea4\transformed\annotation-experimental-1.1.0\AndroidManifest.xml:20:5-22:41
+	android:targetSdkVersion
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\Users\Student\Documents\Dins\rogal\android\AndroidManifest.xml

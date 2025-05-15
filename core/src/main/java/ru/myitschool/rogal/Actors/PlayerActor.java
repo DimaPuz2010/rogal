@@ -52,13 +52,8 @@ public class PlayerActor extends Actor {
     private int level = 1;
     private int experience = 0;
     private int experienceToNextLevel = 100;
-
-    // Максимальный уровень персонажа
-    private static final int MAX_LEVEL = 30;
-
-    // Максимальный уровень способности
-    private static final int MAX_ABILITY_LEVEL = 5;
-
+    private static final int MAX_LEVEL = 30; // Максимальный уровень персонажа
+    private static final int MAX_ABILITY_LEVEL = 5; // Максимальный уровень способности
     private static final float MAX_SPEED = 3.0f; // Максимальная скорость игрока
     private static float SPEED = 2f;
     private final Touchpad touchpad;
@@ -91,11 +86,10 @@ public class PlayerActor extends Actor {
     private static final int LEVELS_PER_SHIP_UPGRADE = 6; // Количество уровней игрока на одну текстуру
     // Добавим переменную для хранения текущей активной текстуры
     private TextureRegion currentActiveTexture;
-    // Добавляем переменные для системы текстур в зависимости от уровня
-    private int shipLevel = 1; // Текущий уровень корабля (от 1 до 5)
-    private Animation<TextureRegion> exhaustAnimation; // Анимация выхлопа двигателя
-    private float animationTime = 0f; // Время для анимации
-    private Texture shipTexture; // Текстура корабля
+    private int shipLevel = 1;
+    private Animation<TextureRegion> exhaustAnimation;
+    private float animationTime = 0f;
+    private Texture shipTexture;
 
     private interface AbilityConstructor {
         Ability create();
@@ -122,14 +116,7 @@ public class PlayerActor extends Actor {
     private DeathHandler deathHandler;
 
     public PlayerActor(final String texturePath, final Touchpad touchpad) {
-        // Определяем начальный уровень корабля на основе уровня игрока в PlayerData
-        int playerLevel = PlayerData.getPlayerLevel();
-        if (playerLevel <= 0) playerLevel = 1; // Защита от некорректных данных
-
-        // Вычисляем уровень корабля на основе уровня игрока
-        this.shipLevel = Math.min(((playerLevel - 1) / LEVELS_PER_SHIP_UPGRADE) + 1, MAX_SHIP_LEVEL);
-
-        // Загружаем текстуры для нужного уровня корабля
+        shipLevel = 1;
         loadShipTextures();
 
         // Теперь texture инициализируется в loadShipTextures()
@@ -598,8 +585,6 @@ public class PlayerActor extends Actor {
 
         LogHelper.log("PlayerActor", "Level UP! Current level: " + level);
 
-        // Сохраняем данные игрока
-        PlayerData.savePlayerLevel(level);
         updateUIData();
     }
 
@@ -1414,7 +1399,10 @@ public class PlayerActor extends Actor {
         if (newShipLevel != shipLevel) {
             shipLevel = newShipLevel;
             loadShipTextures();
-
         }
+    }
+
+    public Texture getTexture() {
+        return texture.getTexture();
     }
 }

@@ -483,7 +483,7 @@ public class LightningChainAbility extends Ability {
                 batch.draw(texture,
                     p1.x, p1.y - getHeight() / 2,
                     0, getHeight() / 2,
-                    length, getHeight(),
+                    getHeight()/2, length,
                     1, 1,
                     angle - 90);
             }
@@ -601,7 +601,7 @@ public class LightningChainAbility extends Ability {
                 batch.draw(texture,
                     p1.x, p1.y - getHeight() / 2,
                     0, getHeight() / 2,
-                    length, getHeight(),
+                    getHeight()/2, length,
                     1, 1,
                     angle - 90);
             }
