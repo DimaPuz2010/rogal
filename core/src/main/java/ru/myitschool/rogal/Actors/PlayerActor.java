@@ -12,7 +12,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Timer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +55,7 @@ public class PlayerActor extends Actor {
     private static final int MAX_LEVEL = 30; // Максимальный уровень персонажа
     private static final int MAX_ABILITY_LEVEL = 5; // Максимальный уровень способности
     private static final float MAX_SPEED = 3.0f; // Максимальная скорость игрока
-    private static float SPEED = 2f;
+    private float SPEED = 2f;
     private final Touchpad touchpad;
     private GameUI gameUI;
     // Переменные для управления с помощью касания
@@ -116,9 +115,15 @@ public class PlayerActor extends Actor {
     // Обработчик смерти
     private DeathHandler deathHandler;
 
+    private boolean isDying = false;
+    private boolean deathAnimationFinished = false;
+
     public PlayerActor(final String texturePath, final Touchpad touchpad) {
         shipLevel = 1;
         loadShipTextures();
+
+        // Сбрасываем скорость к начальному значению
+        SPEED = 2f;
 
         // Теперь texture инициализируется в loadShipTextures()
         this.touchpad = touchpad;
@@ -221,6 +226,16 @@ public class PlayerActor extends Actor {
 
         // Определяем, какую текстуру использовать в данный момент
         updateActiveTexture();
+
+        // Проверяем завершение анимации смерти
+        if (isDying && !deathAnimationFinished) {
+            if (exhaustAnimation != null && exhaustAnimation.isAnimationFinished(animationTime)) {
+                deathAnimationFinished = true;
+                if (deathHandler != null) {
+                    deathHandler.onPlayerDeath();
+                }
+            }
+        }
 
         boolean isAbilitySelectionActive = false;
         if (gameUI != null) {
@@ -778,8 +793,11 @@ public class PlayerActor extends Actor {
     private void onDeath() {
         LogHelper.log("PlayerActor", "Player died!");
 
+        isDying = true;
+        deathAnimationFinished = false;
         isMovingToTarget = false;
         setSpeed(0);
+        animationTime = 0f; // Сбрасываем время анимации для корректного воспроизведения
 
         String filePattern = "Explosion_" + shipLevel + "_" ;
         Array<TextureRegion> exhaustFrames = new Array<>();
@@ -794,18 +812,15 @@ public class PlayerActor extends Actor {
         }
 
         if (exhaustFrames.size > 0) {
-            exhaustAnimation = new Animation<>(0.1f, exhaustFrames, Animation.PlayMode.LOOP);
+            exhaustAnimation = new Animation<>(0.1f, exhaustFrames, Animation.PlayMode.NORMAL);
         } else {
             exhaustAnimation = null;
             LogHelper.error("PlayerActor", "No animation frames found for ship level " + shipLevel);
-        }
-
-        Timer.schedule(new Timer.Task() {
-            @Override
-            public void run() {
+            // Если анимация не найдена, сразу вызываем обработчик смерти
+            if (deathHandler != null) {
                 deathHandler.onPlayerDeath();
             }
-        }, 1);
+        }
     }
 
     /**
