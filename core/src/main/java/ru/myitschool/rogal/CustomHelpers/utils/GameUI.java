@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -24,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
@@ -165,9 +167,13 @@ public class GameUI implements Disposable {
         stage.addActor(mainTable);
     }
 
+    private Image portrait;
+    public void setPortrait(Texture portrait) {
+        this.portrait.setDrawable(new SpriteDrawable(new Sprite(portrait)));
+    }
     private void createLeftSection() {
         // Портрет игрока
-        Image portrait = new Image(player.getTexture());
+        portrait = new Image(player.getTexture());
         leftSection.add(portrait).size(100).padBottom(15).row();
 
         // Процент опыта
@@ -565,8 +571,11 @@ public class GameUI implements Disposable {
 
             // Обновляем слоты способностей
             updateAbilitySlots();
+
         }
     }
+
+
 
     /**
      * Обновляет информацию о текущем уровне сложности (волна)

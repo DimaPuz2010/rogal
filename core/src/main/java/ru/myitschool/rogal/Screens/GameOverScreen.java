@@ -105,8 +105,8 @@ public class GameOverScreen implements Screen {
         // Статус отправки результата на сервер
         scoreSubmitStatusLabel = new Label("Отправка результата...", textStyle);
 
-        // Кнопка "Магазин улучшений"
-        TextButton shopButton = ButtonCreator.createButton("МАГАЗИН УЛУЧШЕНИЙ", FontManager.getButtonFont());
+        // Кнопка "улучшения"
+        TextButton shopButton = ButtonCreator.createButton("УЛУЧШЕНИЯ", FontManager.getButtonFont());
         shopButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
