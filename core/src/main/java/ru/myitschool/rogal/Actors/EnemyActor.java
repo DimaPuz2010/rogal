@@ -121,7 +121,7 @@ public class EnemyActor extends Actor {
     }
 
     /**
-     * Стандартный конструктор для существующего кода
+     * Стандартный конструктор
      */
     public EnemyActor(String texturePath) {
         Texture tex = new Texture(texturePath);
@@ -300,18 +300,6 @@ public class EnemyActor extends Actor {
         }
 
         return true;
-    }
-
-    /**
-     * Устанавливает тип поведения ИИ
-     *
-     * @param type тип поведения
-     */
-    public void setBehaviorType(BehaviorType type) {
-        this.behaviorType = type;
-        this.behaviorTimer = 0;
-
-        this.behaviorDuration = MathUtils.random(2.0f, 5.0f);
     }
 
     /**

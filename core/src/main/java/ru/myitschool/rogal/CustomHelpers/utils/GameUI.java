@@ -1019,7 +1019,7 @@ public class GameUI implements Disposable {
         // Обновляем текст
         String waveText = difficultyLabel.getText().toString();
         String waveNumber = "1";
-        if (waveText != null && waveText.contains(" ")) {
+        if (waveText.contains(" ")) {
             String[] parts = waveText.split(" ");
             if (parts.length > 1) {
                 waveNumber = parts[1];

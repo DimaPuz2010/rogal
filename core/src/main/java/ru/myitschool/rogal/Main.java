@@ -73,12 +73,7 @@ public class Main extends Game {
 
                 if (projectVersion != null && !projectVersion.isEmpty()) {
                     VERSION = projectVersion;
-                    LogHelper.log("Main", "Загружена версия из файла " + propertiesFile.path() + ": " + VERSION);
-                } else {
-                    LogHelper.log("Main", "В файле " + propertiesFile.path() + " не найдена версия, используется значение по умолчанию: " + VERSION);
                 }
-            } else {
-                LogHelper.log("Main", "Файлы конфигурации не найдены, используется версия по умолчанию: " + VERSION);
             }
         } catch (Exception e) {
             LogHelper.log("Main", "Ошибка при загрузке версии: " + e.getMessage());
@@ -131,7 +126,5 @@ public class Main extends Game {
 
         // Освобождаем ресурсы
         FontManager.dispose();
-
-        LogHelper.log("Main", "Game disposed");
     }
 }

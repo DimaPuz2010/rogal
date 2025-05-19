@@ -48,9 +48,9 @@ public class EnemyManager implements Disposable {
     private final float baseEnemyReward;
 
     // Настройки разнообразия врагов
-    private final float enemyHealthVariation = 0.2f; // ±20% вариация здоровья
+    private final float enemyHealthVariation = 0.1f; // ±20% вариация здоровья
     private final float enemyDamageVariation = 0.15f; // ±15% вариация урона
-    private final float enemySpeedVariation = 0.25f; // ±25% вариация скорости
+    private final float enemySpeedVariation = 0.1f; // ±25% вариация скорости
 
     // Настройки типов врагов
     private enum EnemyType {
@@ -79,9 +79,9 @@ public class EnemyManager implements Disposable {
     private final float eliteEnemySpeedMult = 1.2f;
 
     // Множители прогрессии урона для разных волн
-    private final float earlyGameDamageScale = 1.1f;  // Волны 1-5
-    private final float midGameDamageScale = 1.3f;    // Волны 6-15
-    private final float lateGameDamageScale = 1.5f;   // Волны 16+
+    private final float earlyGameDamageScale = 1f;  // Волны 1-5
+    private final float midGameDamageScale = 1f;    // Волны 6-15
+    private final float lateGameDamageScale = 1f;   // Волны 16+
 
     // Пороговые значения волн
     private static final int MID_GAME_WAVE = 6;
@@ -101,10 +101,10 @@ public class EnemyManager implements Disposable {
 
         // Инициализация настроек
         this.spawnTimer = 0;
-        this.spawnInterval = 3.5f; // Сократил интервал между появлениями
+        this.spawnInterval = 3.5f;
         this.currentWave = 1;
-        this.enemiesPerWave = 3; // Больше врагов в начальной волне
-        this.waveDifficultyMultiplier = 1.2f; // Увеличил множитель сложности
+        this.enemiesPerWave = 3;
+        this.waveDifficultyMultiplier = 1f;
 
         // Инициализация таймера волны
         this.waveDuration = calculateWaveDuration(currentWave);
@@ -115,9 +115,6 @@ public class EnemyManager implements Disposable {
         this.baseEnemyDamage = 15f;
         this.baseEnemySpeed = 0.5f;
         this.baseEnemyReward = 15f;
-
-        // Инициализация оптимизированного пула врагов
-        initEnemyPool();
 
         LogHelper.log("EnemyManager", "Enemy manager initialized with balanced settings");
     }
@@ -195,14 +192,6 @@ public class EnemyManager implements Disposable {
         playerDeathCount++;
         playerPerformanceRating = Math.max(0.7f, playerPerformanceRating - 0.1f);
         LogHelper.log("EnemyManager", "Player died, adjusting difficulty: " + playerPerformanceRating);
-    }
-
-    /**
-     * Инициализирует пул врагов для оптимизации создания
-     */
-    private void initEnemyPool() {
-        // Реализация пула врагов для переиспользования
-        LogHelper.log("EnemyManager", "Enemy pool initialized");
     }
 
     public void update(float delta) {
@@ -455,25 +444,22 @@ public class EnemyManager implements Disposable {
         // Генерируем случайную позицию появления
         Vector2 spawnPosition = generateSpawnPosition();
 
-        // Выбираем текстуру в зависимости от типа врага
-        String texturePath;
+        // Создаем врага с определенными характеристиками
+        EnemyActor enemy;
         switch (enemyType) {
             case FAST:
-                texturePath = "Texture\\Enemy\\Ship_06.png"; // Быстрый, но слабый враг
+                enemy = new EnemyActor("Texture\\Enemy\\Ship_06.png"); // Быстрый, но слабый враг
                 break;
             case TANK:
-                texturePath = "Texture\\Enemy\\Ship_04.png"; // Медленный, но с высоким здоровьем враг
+                enemy = new EnemyActor("Texture\\Enemy\\Ship_04.png"); // Медленный, но с высоким здоровьем враг
                 break;
             case ELITE:
-                texturePath = "Texture\\Enemy\\Ship_03.png"; // Элитный враг с повышенными характеристиками
+                enemy = new EnemyActor("Texture\\Enemy\\Ship_03.png"); // Элитный враг с повышенными характеристиками
                 break;
             default:
-                texturePath = "Texture\\Enemy\\Ship_01.png"; // Обычный враг
+                enemy = new EnemyActor("Texture\\Enemy\\Ship_01.png"); // Обычный враг
                 break;
         }
-
-        // Создаем врага с определенными характеристиками
-        EnemyActor enemy = new EnemyActor(texturePath);
 
         // Настраиваем характеристики
         enemy.setHealth(health);
@@ -494,10 +480,6 @@ public class EnemyManager implements Disposable {
                 handleEnemyDeath(deadEnemy);
             }
         });
-
-        // Логируем информацию о созданном враге
-        LogHelper.log("EnemyManager", "Created " + enemyType + " enemy: HP=" + health +
-            ", DMG=" + damage + ", SPD=" + speed + ", REW=" + reward + ", Texture: " + texturePath);
 
         return enemy;
     }
