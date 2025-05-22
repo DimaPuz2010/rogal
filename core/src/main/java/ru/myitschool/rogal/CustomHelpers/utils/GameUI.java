@@ -715,9 +715,6 @@ public class GameUI implements Disposable {
         Image slotBg = new Image(skillSlot);
         iconStack.add(slotBg);
 
-        // Отладочная информация
-        LogHelper.log(this.getClass().toString(), "Создание слота для способности: " + ability.getName());
-        LogHelper.log(this.getClass().toString(), "Иконка способности: " + (ability.getIcon() != null ? "есть" : "отсутствует"));
 
         if (ability.getIcon() != null) {
             try {

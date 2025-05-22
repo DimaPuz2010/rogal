@@ -46,22 +46,14 @@ public class LightningChainAbility extends Ability {
         this.abilityType = AbilityType.ATTACK;
         this.energyCost = 20f;
 
-        try {
-            if (Gdx.files.internal("abilities/lightning.png").exists()) {
-                this.icon = new Texture(Gdx.files.internal("abilities/lightning.png"));
-                LogHelper.log("LightningChainAbility", "Icon loaded successfully");
-            } else {
-                LogHelper.error("LightningChainAbility", "Icon file doesn't exist");
-            }
-        } catch (Exception e) {
-            LogHelper.error("LightningChainAbility", "Failed to load icon", e);
+        if (Gdx.files.internal("abilities/lightning.png").exists()) {
+            this.icon = new Texture(Gdx.files.internal("abilities/lightning.png"));
         }
     }
 
     @Override
     protected boolean use(Vector2 position) {
         if (owner == null || owner.getStage() == null) {
-            LogHelper.error("LightningChainAbility", "Cannot use ability: owner or stage is missing");
             return false;
         }
 
@@ -71,7 +63,6 @@ public class LightningChainAbility extends Ability {
         EnemyActor firstTarget = findNearestEnemy(playerPos, range);
 
         if (firstTarget == null) {
-            LogHelper.debug("LightningChainAbility", "No valid target found within range");
             return false;
         }
 
@@ -86,7 +77,6 @@ public class LightningChainAbility extends Ability {
         firstTarget.takeDamage(Math.round(damageAmount));
         hitEnemies.add(firstTarget);
 
-        LogHelper.log("LightningChainAbility", "Primary target hit for " + Math.round(damageAmount) + " damage");
 
         chainLightning(firstTarget, hitEnemies, 1, damageAmount * damageFalloff);
 
@@ -125,8 +115,6 @@ public class LightningChainAbility extends Ability {
         nextTarget.takeDamage(damage);
         hitEnemies.add(nextTarget);
 
-        LogHelper.log("LightningChainAbility", "Chain lightning jump #" + currentJump +
-                     " hit target for " + damage + " damage");
 
         // Продолжаем цепь к следующей цели
         chainLightning(nextTarget, hitEnemies, currentJump + 1, currentDamage * damageFalloff);
@@ -213,26 +201,36 @@ public class LightningChainAbility extends Ability {
             case 2:
                 damageAmount += 10f;
                 cooldown -= 0.5f;
-                LogHelper.log("LightningChainAbility", "Level 2: Damage increased, cooldown reduced");
                 break;
             case 3:
                 maxJumps += 1;
                 chainRange += 40f;
-                LogHelper.log("LightningChainAbility", "Level 3: Added extra jump, increased chain range");
                 break;
             case 4:
                 damageAmount += 15f;
                 chainRange += 60f;
                 cooldown -= 0.5f;
-                LogHelper.log("LightningChainAbility", "Level 4: Significantly increased damage and chain range");
                 break;
             case 5:
                 maxJumps = 5;
                 damageAmount += 10f;
                 damageFalloff = 0.8f;
-                LogHelper.log("LightningChainAbility", "Level 5: Maximum jumps increased to 5, damage increased");
                 break;
         }
+    }
+
+    @Override
+    public String getDescription() {
+        if (level == 1){
+            return description;
+        } else if (level+1 == 3){
+            return "Молния перескакивает ещё на одну цель.";
+        } else if (level+1 == 4) {
+            return "Значительно увеличивает урон и дальность цепи.";
+        } else if (level+1 == 5) {
+            return "Максимальное количество перескоков увеличивается до 5.";
+        }
+        return description;
     }
 
     protected void tryAutoActivate() {
@@ -427,7 +425,7 @@ public class LightningChainAbility extends Ability {
             setWidth(width);
             setHeight(height);
             setPosition(start.x, start.y - height / 2);
-            setColor(0.5f, 0.7f, 1f, 0.8f); // Другой цвет для мини-молнии
+            setColor(0.5f, 0.7f, 1f, 0.8f);
 
             addAction(Actions.sequence(
                 Actions.delay(duration * 0.7f),

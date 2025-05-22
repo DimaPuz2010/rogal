@@ -19,7 +19,7 @@ public class Main extends Game {
     public static final int SCREEN_WIDTH = 1280;
     public static final int SCREEN_HEIGHT = 720;
 
-    public static String VERSION = "1.0.9";
+    public static String VERSION = "1.1.0";
 
     @Override
     public void create() {

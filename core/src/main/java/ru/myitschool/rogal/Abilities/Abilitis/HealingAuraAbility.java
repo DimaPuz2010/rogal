@@ -55,34 +55,23 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
      */
     public HealingAuraAbility() {
         super("Healing Aura",
-            "Создаёт лечащую ауру вокруг игрока, которая восстанавливает здоровье и наносит урон врагам.\n" +
-                "Уровень 2: Увеличивает лечение и урон. Снижает перезарядку.\n" +
-                "Уровень 3: Увеличивает область действия и количество лечения.\n" +
-                "Уровень 4: Значительно увеличивает силу лечения и снижает перезарядку.\n" +
-                "Уровень 5: Существенно увеличивает лечение, урон и область действия.",
+            "Создаёт лечащую ауру вокруг игрока, которая восстанавливает здоровье и наносит урон врагам.",
                 "abilities/healing_aura_effect.png",
-                14f,     // Слегка уменьшенный кулдаун
-                180f,    // Увеличенный радиус действия
-                180f,    // Увеличенный радиус визуального эффекта
-                6.0f,    // Увеличенная длительность эффекта
-            25f,     // Увеличенное базовое значение исцеления
+                14f,     // кулдаун
+                180f,    // радиус действия
+                180f,    // радиус визуального эффекта
+                6.0f,    // Удлительность эффекта
+                25f,     // базовое значение исцеления
                 "abilities/healing_aura_effect.png");
 
         abilityType = AbilityType.DEFENSIVE;
         energyCost = 25f;
-        healAmount = 25f;  // Увеличенная базовая сила исцеления
+        healAmount = 25f;
         damageAmount = 8f;
         auraDuration = 6f;
 
-        try {
-            if (Gdx.files.internal("abilities/healing_aura_effect.png").exists()) {
-                this.icon = new Texture(Gdx.files.internal("abilities/healing_aura_effect.png"));
-                LogHelper.log("HealingAuraAbility", "Icon loaded successfully");
-            } else {
-                LogHelper.error("HealingAuraAbility", "Icon file doesn't exist");
-            }
-        } catch (Exception e) {
-            LogHelper.error("HealingAuraAbility", "Failed to load icon", e);
+        if (Gdx.files.internal("abilities/healing_aura_effect.png").exists()) {
+            this.icon = new Texture(Gdx.files.internal("abilities/healing_aura_effect.png"));
         }
     }
 
@@ -106,7 +95,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             baseSpeed = player.getSpeed();
         }
 
-        LogHelper.log("HealingAuraAbility", "Healing aura activated!");
         return true;
     }
 
@@ -255,7 +243,6 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
                     activeDebuffsReduction.put(debuffId, reduction);
 
                     reduceDebuffDuration(debuffId, reduction);
-                    LogHelper.log("HealingAuraAbility", "Reduced debuff " + debuffId + " duration by " + reduction + " seconds");
                 }
             }
         }
@@ -289,25 +276,35 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
 
         // Усиленное повышение исцеления на низких уровнях
         if (level == 2) {
-            healAmount *= 1.5f;  // Больший бонус исцеления на 2 уровне
+            healAmount *= 1.5f;
             damageAmount *= 1.2f;
-            LogHelper.log("HealingAuraAbility", "Healing significantly increased at level 2");
         } else if (level == 3) {
             healAmount *= 1.3f;
             damageAmount *= 1.15f;
             reducesDebuffs = true;
-            LogHelper.log("HealingAuraAbility", "Healing increased and debuff reduction unlocked at level 3");
         } else if (level == 4) {
             healAmount *= 1.3f;
             damageAmount *= 1.25f;
-            LogHelper.log("HealingAuraAbility", "Healing and damage increased at level 4");
         } else if (level == 5) {
             healAmount *= 1.2f;
             damageAmount *= 1.2f;
             boostsSpeed = true;
             speedBoostPercent = 20f;
-            LogHelper.log("HealingAuraAbility", "Speed boost unlocked and healing further increased at level 5");
         }
+    }
+
+    @Override
+    public String getDescription() {
+        if (level == 1){
+            return description;
+        } else if (level+1 == 3){
+            return "Увеличивает область действия и количество лечения.";
+        } else if (level+1 == 4) {
+            return "Значительно увеличивает силу лечения и снижает перезарядку.";
+        } else if (level+1 == 5) {
+            return "Существенно увеличивает урон и ускоряет игрока";
+        }
+        return description;
     }
 
     @Override
@@ -639,13 +636,11 @@ public class HealingAuraAbility extends AreaOfEffectAbility {
             // На средних уровнях при HP < 75%
             activationThreshold = 0.75f;
         } else {
-            // На высоких уровнях почти всегда активна при HP < 90%
-            activationThreshold = 0.9f;
+            // На высоких уровнях почти всегда активна при HP < 80%
+            activationThreshold = 0.8f;
         }
 
-        // Проверяем, достаточно ли низкое здоровье для активации
         if (healthPercent < activationThreshold) {
-            // Активируем способность на позиции игрока
             Vector2 playerPos = new Vector2(
                 owner.getX() + owner.getWidth() / 2,
                 owner.getY() + owner.getHeight() / 2

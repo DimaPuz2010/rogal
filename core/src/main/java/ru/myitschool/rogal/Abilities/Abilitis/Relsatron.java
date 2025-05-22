@@ -30,11 +30,7 @@ public class Relsatron extends Ability {
     private float projectileSpreadAngle = 0f; // Угол разброса между пулями в градусах
 
     public Relsatron() {
-        super("Relsatron", "Создаёт энергетический снаряд, который автоматически направляется к ближайшему врагу и наносит урон\n" +
-                "Уровень 2: Увеличивает урон и дальность\n" +
-                "Уровень 3: Выпускает 2 снаряда одновременно\n" +
-                "Уровень 4: Снижает перезарядку и повышает скорость снарядов\n" +
-                "Уровень 5: Выпускает 3 снаряда и значительно увеличивает урон",
+        super("Relsatron", "Создаёт энергетический снаряд, который автоматически направляется к ближайшему врагу и наносит урон",
             "abilities/relsatron.png", 1.0f, 500f);
 
         this.abilityType = AbilityType.ATTACK;
@@ -42,15 +38,8 @@ public class Relsatron extends Ability {
         this.cooldown = 15f;
         this.range = 1000f;
 
-        try {
-            if (Gdx.files.internal(projectileTexturePath).exists()) {
-                this.icon = new Texture(Gdx.files.internal(projectileTexturePath));
-                LogHelper.log("Relsatron", "Icon loaded successfully");
-            } else {
-                LogHelper.error("Relsatron", "Icon file doesn't exist");
-            }
-        } catch (Exception e) {
-            LogHelper.error("Relsatron", "Failed to load icon", e);
+        if (Gdx.files.internal(projectileTexturePath).exists()) {
+            this.icon = new Texture(Gdx.files.internal(projectileTexturePath));
         }
     }
 
@@ -109,10 +98,8 @@ public class Relsatron extends Ability {
                 owner.getStage().addActor(projectile);
             }
 
-            LogHelper.log("Relsatron", "Energy projectiles launched: " + projectileCount);
             return true;
         } catch (Exception e) {
-            LogHelper.error("Relsatron", "Error creating projectiles", e);
             return false;
         }
     }
@@ -131,22 +118,31 @@ public class Relsatron extends Ability {
         if (level == 2) {
             projectileDamage += 20f;
             range += 100f;
-            LogHelper.log("Relsatron", "Level 2: Increased damage and range");
         } else if (level == 3) {
             cooldown -= 3f;
             projectileSpeed += 5f;
             projectileSpreadAngle = 15f;
-            LogHelper.log("Relsatron", "Level 3: Fires 2 projectiles");
         } else if (level == 4) {
             cooldown -= 2f;
             projectileSpeed += 10f;
-            LogHelper.log("Relsatron", "Level 4: Reduced cooldown and increased projectile speed");
         } else if (level == 5) {
             cooldown -= 5f;
             projectileDamage += 100f;
-            projectileSpreadAngle = 20f;
-            LogHelper.log("Relsatron", "Level 5: Fires 3 projectiles with increased damage");
         }
+    }
+
+    @Override
+    public String getDescription() {
+        if (level == 1){
+            return description;
+        } else if (level+1 == 3){
+            return "Уменьшает перезарядку, увеличивает скорость и урон снаряда.";
+        } else if (level+1 == 4) {
+            return "Уменьшает перезарядку и увеличивает скорость";
+        } else if (level+1 == 5) {
+            return "Уменьшает перезарядку, значительно увеличивает урон снаряда";
+        }
+        return description;
     }
 
     @Override
@@ -184,7 +180,6 @@ public class Relsatron extends Ability {
             }
 
             if (nearestEnemyPos != null) {
-                LogHelper.debug("Relsatron", "Found nearest enemy at distance: " + minDistance);
                 return nearestEnemyPos;
             }
         }
@@ -208,24 +203,17 @@ public class Relsatron extends Ability {
         }
 
         if (!enemiesExist) {
-            LogHelper.debug("Relsatron", "No enemies on stage");
             return;
         }
 
         if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
-            LogHelper.debug("Relsatron", "Not enough energy");
             return;
         }
 
         Vector2 targetPosition = findTargetPosition();
 
         if (targetPosition != null) {
-            boolean success = activate(targetPosition);
-            if (success) {
-                LogHelper.log("Relsatron", "Auto-used successfully");
-            } else {
-                LogHelper.debug("Relsatron", "Failed to use ability");
-            }
+            activate(targetPosition);
         }
     }
 

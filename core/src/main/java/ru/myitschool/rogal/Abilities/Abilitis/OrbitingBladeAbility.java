@@ -38,11 +38,7 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
      */
     public OrbitingBladeAbility() {
         super("Orbiting Blade",
-            "Создаёт лезвие, которое вращается вокруг игрока и наносит урон врагам.\n" +
-                "Уровень 2: Увеличивает урон и скорость вращения.\n" +
-                "Уровень 3: Добавляет второе лезвие.\n" +
-                "Уровень 4: Значительно увеличивает урон и размер.\n" +
-                "Уровень 5: Увеличивает радиус орбиты и добавляет третье лезвие.",
+            "Создаёт лезвие, которое вращается вокруг игрока и наносит урон врагам.",
               "abilities/blade_icon.png",
               7f,      // Кулдаун
               200f,    // Радиус действия
@@ -55,11 +51,7 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         energyCost = 20f;
         damageAmount = 25f;
 
-        try{
-            this.icon = new Texture(Gdx.files.internal("abilities/blade_icon.png"));
-        } catch (Exception e) {
-            LogHelper.error("OrbitingBladeAbility", "Failed to load icon", e);
-        }
+        this.icon = new Texture(Gdx.files.internal("abilities/blade_icon.png"));
     }
 
     @Override
@@ -75,7 +67,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
         currentPosition = new Vector2(owner.getX() + owner.getWidth()/2, owner.getY() + owner.getHeight()/2);
         hitEnemies.clear();
 
-        LogHelper.log("OrbitingBladeAbility", "Orbiting blade activated!");
         return true;
     }
 
@@ -103,7 +94,6 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
             }
         }
 
-        LogHelper.log("OrbitingBladeAbility", "Created " + bladeCount + " blades with angle step " + angleStep);
     }
 
     /**
@@ -242,6 +232,20 @@ public class OrbitingBladeAbility extends AreaOfEffectAbility {
             clearBlades();
             createBladeVisuals();
         }
+    }
+
+    @Override
+    public String getDescription() {
+        if (level == 1){
+            return description;
+        } else if (level+1 == 3){
+            return "Добавляет лезвие.";
+        } else if (level+1 == 4) {
+            return "Значительно увеличивает урон ,размер и добавляет лезвие..";
+        } else if (level+1 == 5) {
+            return "Увеличивает радиус орбиты и добавляет лезвие.";
+        }
+        return description;
     }
 
     public void tryAutoActivate() {

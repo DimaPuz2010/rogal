@@ -44,7 +44,6 @@ public abstract class Ability {
         this.description = description;
         this.cooldown = cooldown;
         this.range = range;
-
     }
 
     /**
@@ -53,6 +52,14 @@ public abstract class Ability {
      */
     public void setOwner(PlayerActor owner) {
         this.owner = owner;
+    }
+
+    /**
+     * Устанавливает писание способности
+     * @param description писание способность
+     */
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     /**

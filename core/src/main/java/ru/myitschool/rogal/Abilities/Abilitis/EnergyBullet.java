@@ -34,9 +34,7 @@ public class EnergyBullet extends Ability {
     private final float projectileSpreadAngle = 15f; // Угол разброса между пулями в градусах
 
     public EnergyBullet() {
-        super("Energy Bullet", "Создаёт энергетический снаряд, который автоматически летит к врагу и наносит урон\n" +
-                "Уровень 3: Выпускает 2 снаряда\n" +
-                "Уровень 5: Выпускает 3 снаряда и при попадании создаёт мини-молнию, поражающую ближайших врагов",
+        super("Energy Bullet", "Создаёт энергетический снаряд, который автоматически летит к врагу и наносит урон\n",
               "abilities/fireball.png", 1.0f, 500f);
 
         this.abilityType = AbilityType.ATTACK;
@@ -44,15 +42,8 @@ public class EnergyBullet extends Ability {
         this.cooldown = 0.8f;
         this.range = 550f;
 
-        try {
-            if (Gdx.files.internal("abilities/fireball.png").exists()) {
-                this.icon = new Texture(Gdx.files.internal("abilities/fireball.png"));
-                LogHelper.log("EnergyBullet", "Icon loaded successfully");
-            } else {
-                LogHelper.error("EnergyBullet", "Icon file doesn't exist");
-            }
-        } catch (Exception e) {
-            LogHelper.error("EnergyBullet", "Failed to load icon", e);
+        if (Gdx.files.internal("abilities/fireball.png").exists()) {
+            this.icon = new Texture(Gdx.files.internal("abilities/fireball.png"));
         }
     }
 
@@ -64,14 +55,13 @@ public class EnergyBullet extends Ability {
 
         if (timeSinceLastActivation >= autoActivateInterval) {
             timeSinceLastActivation = 0f;
-            tryAutoActivate();
+            tryAutoActivate(delta);
         }
     }
 
     @Override
     protected boolean use(Vector2 position) {
         if (owner == null || owner.getStage() == null) {
-            LogHelper.error("EnergyBullet", "Cannot use ability: owner or stage is missing");
             return false;
         }
 
@@ -110,10 +100,8 @@ public class EnergyBullet extends Ability {
                 owner.getStage().addActor(projectile);
             }
 
-            LogHelper.log("EnergyBullet", "Energy projectiles launched: " + projectileCount);
             return true;
         } catch (Exception e) {
-            LogHelper.error("EnergyBullet", "Error creating projectiles", e);
             return false;
         }
     }
@@ -128,16 +116,28 @@ public class EnergyBullet extends Ability {
         cooldown = Math.max(0.8f, cooldown - 0.3f);
         range += 20f;
         projectileDamage += 2.5f;
-
         if (level == 3) {
             projectileCount += 2;
             projectileDamage += 5;
-            LogHelper.log("EnergyBullet", "Level 3 upgrade: Now fires 2 projectiles!");
         } else if (level == 5) {
             projectileCount += 1;
             projectileDamage += 10;
-            LogHelper.log("EnergyBullet", "Level 5 upgrade: Now fires 3 projectiles!");
         }
+
+    }
+
+    @Override
+    public String getDescription() {
+        if (level == 1){
+            return description;
+        } else if (level+1 == 3){
+            return "Выпускает 2 снаряда";
+        } else if (level+1 == 4) {
+            return "Улучшает способность";
+        } else if (level+1 == 5) {
+            return "Выпускает 3 снаряда и при попадании создаёт мини-молнию, поражающую ближайших врагов";
+        }
+        return description;
     }
 
     @Override
@@ -176,7 +176,6 @@ public class EnergyBullet extends Ability {
             }
 
             if (nearestEnemyPos != null) {
-                LogHelper.debug("EnergyBullet", "Found nearest enemy at distance: " + minDistance);
                 return nearestEnemyPos;
             }
         }
@@ -200,24 +199,17 @@ public class EnergyBullet extends Ability {
         }
 
         if (!enemiesExist) {
-            LogHelper.debug("EnergyBullet", "No enemies on stage");
             return;
         }
 
         if (energyCost > 0 && owner.getCurrentEnergy() < energyCost) {
-            LogHelper.debug("EnergyBullet", "Not enough energy");
             return;
         }
 
         Vector2 targetPosition = findTargetPosition();
 
         if (targetPosition != null) {
-            boolean success = activate(targetPosition);
-            if (success) {
-                LogHelper.log("EnergyBullet", "Auto-used successfully");
-            } else {
-                LogHelper.debug("EnergyBullet", "Failed to use ability");
-            }
+            activate(targetPosition);
         }
     }
 

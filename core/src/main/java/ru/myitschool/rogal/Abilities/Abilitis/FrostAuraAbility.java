@@ -34,11 +34,7 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
      */
     public FrostAuraAbility() {
         super("Frost Aura",
-            "Создаёт ледяную ауру вокруг игрока, которая замедляет врагов и наносит им урон.\n" +
-                "Уровень 2: Увеличивает урон и эффект замедления.\n" +
-                "Уровень 3: Расширяет область действия и снижает перезарядку.\n" +
-                "Уровень 4: Значительно увеличивает урон и длительность замедления.\n" +
-                "Уровень 5: Существенно увеличивает урон и полностью замораживает врагов на короткое время.",
+            "Создаёт ледяную ауру вокруг игрока, которая замедляет врагов и наносит им урон.",
               "abilities/frost_aura.png",
               12f,    // Кулдаун
               130f,   // Радиус действия
@@ -50,11 +46,7 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         abilityType = AbilityType.ATTACK;
         energyCost = 20f;
 
-        try {
-            this.icon = new Texture(Gdx.files.internal("abilities/frost_aura.png"));
-        } catch (Exception e) {
-            LogHelper.error("FrostAuraAbility", "Failed to load icon", e);
-        }
+        this.icon = new Texture(Gdx.files.internal("abilities/frost_aura.png"));
     }
 
     @Override
@@ -73,7 +65,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
             owner.getStage().addActor(auraVisual);
         }
 
-        LogHelper.log("FrostAuraAbility", "Frost aura activated!");
         return true;
     }
 
@@ -150,7 +141,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
         if (enemy == null) return;
 
         enemy.resetSpeed();
-        LogHelper.log("FrostAuraAbility", "Enemy speed restored to normal");
     }
 
     @Override
@@ -203,8 +193,6 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
             enemy.applySlowEffect(slowAmount / 100f);
 
             activeSlowEffects.add(new SlowEffect(enemy, slowDuration));
-
-            LogHelper.log("FrostAuraAbility", "Enemy slowed by " + slowAmount + "%");
         }
     }
 
@@ -224,26 +212,36 @@ public class FrostAuraAbility extends AreaOfEffectAbility {
 
         if (level == 2) {
             slowAmount = 40f;
-            LogHelper.log("FrostAuraAbility", "Level 2: Damage and slow effect increased");
         }
 
         if (level == 3) {
             areaRadius *= 1.3f;
             cooldown = 10f;
-            LogHelper.log("FrostAuraAbility", "Level 3: Area of effect increased and cooldown reduced");
         }
 
         if (level == 4) {
             damageAmount *= 1.5f;
             slowDuration = 2.5f;
-            LogHelper.log("FrostAuraAbility", "Level 4: Damage significantly increased and slow duration extended");
         }
 
         if (level == 5) {
             damageAmount *= 1.5f;
             slowAmount = 50f;
-            LogHelper.log("FrostAuraAbility", "Level 5: Damage greatly increased and enemies are now almost completely frozen");
         }
+    }
+
+    @Override
+    public String getDescription() {
+        if (level == 1){
+            return description;
+        } else if (level+1 == 3){
+            return "Расширяет область действия и снижает перезарядку.";
+        } else if (level+1 == 4) {
+            return "Значительно увеличивает урон и длительность замедления";
+        } else if (level+1 == 5) {
+            return "Существенно увеличивает урон и полностью замораживает врагов на короткое время.";
+        }
+        return description;
     }
 
     public void tryAutoActivate() {
