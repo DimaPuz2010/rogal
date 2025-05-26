@@ -168,7 +168,6 @@ public class GameOverScreen implements Screen {
     private void submitScoreToLeaderboard() {
         if (scoreSubmitted) return;
 
-        // Получаем имя игрока из сохраненных данных
         String playerNameTemp = PlayerData.getPlayerName();
 
         // Если имя не задано (что теоретически не должно произойти), используем временное имя
@@ -178,7 +177,6 @@ public class GameOverScreen implements Screen {
         }
 
         final String playerName = playerNameTemp;
-        LogHelper.log("GameOverScreen", "Отправка результата на сервер: имя=" + playerName + ", волна=" + wave + ", убийства=" + kills);
 
         submitScore(playerName, wave, kills);
     }
@@ -206,11 +204,9 @@ public class GameOverScreen implements Screen {
                 @Override
                 public void onError(String error) {
                     scoreSubmitStatusLabel.setText("Ошибка отправки: " + error);
-                    LogHelper.error("GameOverScreen", "Ошибка отправки результата: " + error);
                 }
             });
         } catch (Exception e) {
-            LogHelper.error("GameOverScreen", "Критическая ошибка при отправке результата: " + e.getMessage());
             scoreSubmitStatusLabel.setText("Не удалось отправить результат");
         }
     }
@@ -226,20 +222,16 @@ public class GameOverScreen implements Screen {
             @Override
             public void onSuccess(LeaderboardEntry bestScore) {
                 if (bestScore != null) {
-                    LogHelper.log("GameOverScreen", "Получен лучший результат: id=" + bestScore.getId() +
-                        ", текущий id=" + entry.getId() + ", isBestScore=" + bestScore.isBestScore());
 
                     // Проверяем по флагу isBestScore или по ID записи
                     if (bestScore.isBestScore() && bestScore.getId().equals(entry.getId())) {
                         scoreSubmitStatusLabel.setText("Новый рекорд! Счет: " + entry.getScore());
-                        LogHelper.log("GameOverScreen", "Установлен новый рекорд: " + entry.getScore() + " очков");
                     }
                 }
             }
 
             @Override
             public void onError(String error) {
-                // Просто логируем ошибку, но не показываем пользователю
                 LogHelper.error("GameOverScreen", "Ошибка при получении лучшего результата: " + error);
             }
         });

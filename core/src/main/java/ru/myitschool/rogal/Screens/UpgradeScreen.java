@@ -52,8 +52,6 @@ public class UpgradeScreen implements Screen {
         backgroundTexture = new Texture("BG.png");
 
         createUI();
-
-        LogHelper.log("UpgradeScreen", "Upgrade screen initialized");
     }
 
     private void createUI() {

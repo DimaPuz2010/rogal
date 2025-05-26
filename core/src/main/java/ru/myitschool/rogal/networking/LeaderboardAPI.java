@@ -56,10 +56,7 @@ public class LeaderboardAPI {
      */
     public static void initialize() {
         try {
-            // Загружаем сохраненные настройки если они есть
             loadServerSettings();
-
-            LogHelper.log("LeaderboardAPI", "Инициализирован с сервером: " + getServerUrl() + SERVER_PATH);
         } catch (Exception e) {
             LogHelper.error("LeaderboardAPI", "Ошибка при инициализации: " + e.getMessage());
         }

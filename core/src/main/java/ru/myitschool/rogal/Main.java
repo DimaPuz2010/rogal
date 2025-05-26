@@ -124,7 +124,6 @@ public class Main extends Game {
     public void dispose() {
         super.dispose();
 
-        // Освобождаем ресурсы
         FontManager.dispose();
     }
 }

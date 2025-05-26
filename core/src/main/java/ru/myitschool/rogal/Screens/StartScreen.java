@@ -30,6 +30,7 @@ public class StartScreen implements Screen {
     private final Stage stage;
     private final Texture backgroundTexture;
     private boolean fullscreen = true;
+    private boolean updateMode = false; // Бета. Не доработано.
 
     public StartScreen(final Main game) {
         this.game = game;
@@ -46,18 +47,17 @@ public class StartScreen implements Screen {
         Table table = new Table();
         table.setFillParent(true);
 
-        // Создаем кнопку "Играть" с пиксельным шрифтом
+        // Создаем кнопку "Играть"
         TextButton playButton = ButtonCreator.createButton("ИГРАТЬ", FontManager.getButtonFont());
         playButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // При нажатии на кнопку переходим к игровому экрану
                 game.setScreen(new GameScreen(game));
                 dispose();
             }
         });
 
-        // Создаем кнопку "улучшения" с пиксельным шрифтом
+        // Создаем кнопку "улучшения"
         TextButton upgradeButton = ButtonCreator.createButton("УЛУЧШЕНИЯ", FontManager.getButtonFont());
         upgradeButton.addListener(new ChangeListener() {
             @Override
@@ -68,7 +68,7 @@ public class StartScreen implements Screen {
             }
         });
 
-        // Создаем кнопку "Настройки" с пиксельным шрифтом
+        // Создаем кнопку "Настройки"
         TextButton settingsButton = ButtonCreator.createButton("НАСТРОЙКИ", FontManager.getButtonFont());
         settingsButton.addListener(new ChangeListener() {
             @Override
@@ -79,7 +79,7 @@ public class StartScreen implements Screen {
             }
         });
 
-        // Создаем кнопку "Таблица лидеров" с пиксельным шрифтом
+        // Создаем кнопку "Таблица лидеров"
         TextButton leaderboardButton = ButtonCreator.createButton("ТАБЛИЦА ЛИДЕРОВ", FontManager.getButtonFont());
         leaderboardButton.addListener(new ChangeListener() {
             @Override
@@ -90,7 +90,7 @@ public class StartScreen implements Screen {
             }
         });
 
-        // Создаем кнопку "Выход" с пиксельным шрифтом
+        // Создаем кнопку "Выход"
         TextButton exitButton = ButtonCreator.createButton("ВЫХОД", FontManager.getButtonFont());
         exitButton.addListener(new ChangeListener() {
             @Override
@@ -100,7 +100,7 @@ public class StartScreen implements Screen {
             }
         });
 
-        // Создаем заголовок игры с пиксельным шрифтом
+        // Создаем заголовок игры
         Label.LabelStyle titleStyle = new Label.LabelStyle(FontManager.getTitleFont(), Color.WHITE);
         Label titleLabel = new Label("ROGAL", titleStyle);
         titleLabel.setAlignment(Align.center);
@@ -135,7 +135,7 @@ public class StartScreen implements Screen {
         updateTable.setBackground(ButtonCreator.createBackground(new Color(0.2f, 0.2f, 0.3f, 0.8f)));
         updateTable.pad(5);
 
-        // Создаем кнопку "Обновления" с уменьшенным размером
+        // Создаем кнопку "Обновления"
         TextButton updateButton = ButtonCreator.createButton("ОБНОВЛЕНИЯ", FontManager.getSmallFont());
 
 
@@ -146,8 +146,9 @@ public class StartScreen implements Screen {
             }
         });
 
-        updateTable.add(updateButton).width(120).height(40).padLeft(200).padBottom(20);
-
+        if(updateMode){
+            updateTable.add(updateButton).width(120).height(40).padLeft(200).padBottom(20);
+        }
         stage.addActor(updateTable);
 
         LogHelper.log("StartScreen", "UI created");
@@ -161,7 +162,6 @@ public class StartScreen implements Screen {
         boolean dialogFound = false;
         for (Actor actor : stage.getActors()) {
             if (actor instanceof UpdateDialog) {
-                LogHelper.log("StartScreen", "Диалог обновлений уже открыт");
                 dialogFound = true;
                 break;
             }

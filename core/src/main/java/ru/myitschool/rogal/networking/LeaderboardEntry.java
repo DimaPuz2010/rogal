@@ -18,11 +18,8 @@ public class LeaderboardEntry implements Json.Serializable {
     private int gamesPlayed;
     private int bestWave;
 
-    public LeaderboardEntry() {
-        // Конструктор по умолчанию для десериализации
-    }
+    public LeaderboardEntry() {}
 
-    // Геттеры и сеттеры
     public String getId() {
         return id;
     }

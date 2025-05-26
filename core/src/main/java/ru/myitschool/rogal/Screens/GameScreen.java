@@ -39,9 +39,9 @@ public class GameScreen implements Screen {
     // Отладочная информация
     private boolean debugMode = false;
 
-    // Текущая волна для экрана поражения
+    // Текущая волна
     private final int currentWave = 1;
-    // Количество убитых врагов для экрана поражения
+    // Количество убитых врагов
     private int enemiesKilled = 0;
     // Флаг окончания игры
     private final boolean gameOver = false;
@@ -82,12 +82,9 @@ public class GameScreen implements Screen {
         float posY = 20 * uiScale;
         touchpad.setPosition(posX, posY);
 
-        // Проверяем, какой режим управления выбран
         boolean touchControlMode = PlayerData.getControlMode() == 1;
-
         // В режиме управления касанием джойстик не нужен
         if (touchControlMode) {
-            // Делаем джойстик невидимым
             touchpad.setVisible(false);
         }
 
@@ -198,53 +195,31 @@ public class GameScreen implements Screen {
 
         Gdx.input.setInputProcessor(inputMultiplexer);
 
-        // Инициализируем менеджер противников
         enemyManager = new EnemyManager(player, gameStage);
 
-        // Настраиваем диапазон появления противников
         enemyManager.setSpawnDistanceRange(350f, 700f);
-
-        // Настраиваем максимальное расстояние для переспавна
         enemyManager.setMaxEnemyDistance(1500f);
-
-        // Ограничиваем количество врагов на экране для лучшего баланса
         enemyManager.setMaxEnemiesOnScreen(10);
-
-        // Устанавливаем слушателя событий волны
         enemyManager.setWaveListener(gameUI.createWaveListener());
 
-        // Устанавливаем слушателя убийств врагов
         enemyManager.setEnemyKillListener(new EnemyManager.EnemyKillListener() {
             @Override
             public void onEnemyKilled() {
-                // Увеличиваем счетчик убитых врагов
                 enemiesKilled++;
-
-                // Логируем событие
-                LogHelper.log("GameScreen", "Enemy killed, total: " + enemiesKilled);
             }
         });
 
-        // Применяем масштаб к интерфейсу, если он был создан
         if (gameUI != null) {
             gameUI.setUIScaleFromSettings(Math.round(uiScale * 100));
         }
 
-        // Устанавливаем обработчики клавиш
         Gdx.input.setCatchKey(Input.Keys.F11, true);
-        Gdx.input.setCatchKey(Input.Keys.X, true); // Клавиша для добаления опыта(50)
-        Gdx.input.setCatchKey(Input.Keys.Z, true); // Клавиша для нанесения урона игроку(20)
-        Gdx.input.setCatchKey(Input.Keys.E, true); // Клавиша для спавна врага
-        Gdx.input.setCatchKey(Input.Keys.P, true); // Клавиша для включения режима отладки
-
-        LogHelper.log("GameScreen", "Game screen initialized");
     }
 
     @Override
     public void render(float delta) {
-        // Если игра окончена, переходим на экран поражения
         if (gameOver && !transitioning) {
-            transitioning = true; // Устанавливаем флаг перехода
+            transitioning = true;
             handlePlayerDeath();
             return;
         }
@@ -252,26 +227,20 @@ public class GameScreen implements Screen {
         handleInput();
         handleFullscreenToggle();
 
-        // Удаляем обработку ввода касания отсюда, так как теперь она делается через InputProcessor
-
         ScreenUtils.clear(0, 0, 0, 1);
 
-        // Обновляем положение камеры, чтобы она следовала за игроком
         updateCamera();
 
         background.render();
 
-        // Обновление игровой логики только если не на паузе
         if (!isAbilitySelectionPaused && !isPaused) {
             gameStage.act(delta);
 
-            // Обновляем менеджер противников
             if (enemyManager != null) {
                 enemyManager.update(delta);
             }
         }
 
-        // Отрисовка сцены
         gameStage.draw();
 
         // Отрисовка маркера целевой точки для режима управления касанием
@@ -283,54 +252,11 @@ public class GameScreen implements Screen {
             gameStage.getBatch().end();
         }
 
-        // Отрисовка UI всегда
         uiStage.act(delta);
         uiStage.draw();
-
-        // Отрисовка хитбоксов в режиме отладки
-        if (debugMode) {
-            renderHitboxes();
-        }
-    }
-
-    /**
-     * Отрисовывает хитбоксы всех объектов для отладки
-     */
-    private void renderHitboxes() {
-        // Получаем камеру игрового мира
-        OrthographicCamera camera = (OrthographicCamera) gameStage.getCamera();
-
-        // Отрисовка хитбокса игрока
-        if (player != null) {
-            HitboxHelper.renderHitbox(player.getHitbox(), Color.GREEN, camera);
-        }
-
-        // Отрисовка хитбоксов врагов
-        for (Actor actor : gameStage.getActors()) {
-            if (actor instanceof EnemyActor) {
-                EnemyActor enemy = (EnemyActor) actor;
-                HitboxHelper.renderHitbox(enemy.getHitbox(), Color.RED, camera);
-            }
-        }
     }
 
     private void handleInput() {
-        if (debugMode) {
-            // Обработка нажатия клавиш для тестовых действий
-            if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
-                player.addExperience(1000);
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
-                player.takeDamage(50);
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.E) && enemyManager != null) {
-                // Используем методы, которые точно есть в EnemyManager
-                enemyManager.update(0); // Просто обновляем менеджер врагов
-            }
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
-            debugMode = !debugMode;
-        }
         // Обработка клавиши Escape для вызова/скрытия меню паузы
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             togglePause();
@@ -350,26 +276,15 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        LogHelper.log("GameScreen", "Resize вызван: ширина=" + width + ", высота=" + height);
-
-        // Обновляем вьюпорты для обеих сцен
         gameStage.getViewport().update(width, height, true);
         uiStage.getViewport().update(width, height, true);
 
-        LogHelper.log("GameScreen", "Вьюпорты обновлены");
-
-        // Обновляем позиции элементов UI
         if (gameUI != null) {
             LogHelper.log("GameScreen", "Обновляем gameUI");
             gameUI.resize(width, height);
         } else {
             LogHelper.log("GameScreen", "gameUI is null");
         }
-
-        // Проверяем тип устройства и добавляем логи
-        boolean isMobile = Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Android ||
-            Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.iOS;
-        LogHelper.log("GameScreen", "Тип устройства: " + Gdx.app.getType() + ", мобильное: " + isMobile);
     }
 
     @Override
@@ -427,33 +342,10 @@ public class GameScreen implements Screen {
         // Рассчитываем награду валюты
         int currencyReward = 50 + (enemyManager.getCurrentWave() * 10) + enemiesKilled;
 
-        // Добавляем валюту и обновляем статистику
         PlayerData.addCurrency(currencyReward);
         PlayerData.updateStats(enemiesKilled, enemyManager.getCurrentWave());
 
-        // Переходим на экран окончания игры
         game.setScreen(new GameOverScreen(game, enemyManager.getCurrentWave(), enemiesKilled, currencyReward));
-    }
-
-    /**
-     * Переходит на экран поражения
-     */
-    private void goToGameOverScreen() {
-
-        transitioning = true;
-
-        final int currencyReward = 50 + (currentWave * 10) + enemiesKilled;
-
-        if (game != null) {
-            // Используем Gdx.app.postRunnable для безопасного перехода между экранами
-            final GameOverScreen gameOverScreen = new GameOverScreen(game, currentWave, enemiesKilled, currencyReward);
-            Gdx.app.postRunnable(new Runnable() {
-                @Override
-                public void run() {
-                    game.setScreen(gameOverScreen);
-                }
-            });
-        }
     }
 
     /**
@@ -489,13 +381,10 @@ public class GameScreen implements Screen {
      */
     public void updateControlMode() {
         if (player != null) {
-            // Обновляем режим управления у игрока
             player.updateControlMode();
 
-            // Получаем текущий режим управления
             boolean touchControlMode = PlayerData.getControlMode() == 1;
 
-            // Обновляем видимость джойстика
             for (Actor actor : uiStage.getActors()) {
                 if (actor instanceof Touchpad) {
                     actor.setVisible(!touchControlMode);
@@ -627,7 +516,6 @@ public class GameScreen implements Screen {
                 }
             });
         } else {
-            // Скрываем меню паузы
             gameUI.hidePauseMenu();
         }
     }
