@@ -137,6 +137,7 @@ ru.myitschool.rogal:id/italic = 0x7f05002e
 ru.myitschool.rogal:attr/fontVariationSettings = 0x7f01000a
 ru.myitschool.rogal:color/androidx_core_ripple_material_light = 0x7f020000
 ru.myitschool.rogal:dimen/notification_top_pad = 0x7f030014
+ru.myitschool.rogal:xml/file_paths = 0x7f0c0000
 ru.myitschool.rogal:dimen/compat_button_inset_horizontal_material = 0x7f030000
 ru.myitschool.rogal:attr/shortcutMatchRequired = 0x7f01000f
 ru.myitschool.rogal:attr/queryPatterns = 0x7f01000e

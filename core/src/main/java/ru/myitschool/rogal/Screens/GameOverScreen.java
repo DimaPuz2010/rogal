@@ -19,8 +19,8 @@ import ru.myitschool.rogal.CustomHelpers.utils.FontManager;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 import ru.myitschool.rogal.CustomHelpers.utils.PlayerData;
 import ru.myitschool.rogal.Main;
-import ru.myitschool.rogal.networking.LeaderboardAPI;
 import ru.myitschool.rogal.networking.LeaderboardEntry;
+import ru.myitschool.rogal.networking.SupabaseAPI;
 
 /**
  * Экран поражения, показывается после смерти игрока
@@ -190,7 +190,7 @@ public class GameOverScreen implements Screen {
      */
     private void submitScore(String playerName, int wave, int kills) {
         try {
-            LeaderboardAPI.submitCurrentPlayerScore(playerName, wave, kills, new LeaderboardAPI.SubmitScoreListener() {
+            SupabaseAPI.submitScore(playerName, wave, kills, bestWave, new SupabaseAPI.SubmitScoreListener() {
                 @Override
                 public void onSuccess(LeaderboardEntry entry) {
                     scoreSubmitStatusLabel.setText("Результат отправлен! Счет: " + entry.getScore());
@@ -218,13 +218,13 @@ public class GameOverScreen implements Screen {
      * @param entry      отправленный результат
      */
     private void checkIfBestScore(String playerName, LeaderboardEntry entry) {
-        LeaderboardAPI.getPlayerBestScore(playerName, new LeaderboardAPI.GetBestScoreListener() {
+        SupabaseAPI.getPlayerBestScore(playerName, new SupabaseAPI.GetBestScoreListener() {
             @Override
             public void onSuccess(LeaderboardEntry bestScore) {
                 if (bestScore != null) {
 
                     // Проверяем по флагу isBestScore или по ID записи
-                    if (bestScore.isBestScore() && bestScore.getId().equals(entry.getId())) {
+                    if (bestScore.isBestScore() && bestScore.getId() == entry.getId()) {
                         scoreSubmitStatusLabel.setText("Новый рекорд! Счет: " + entry.getScore());
                     }
                 }

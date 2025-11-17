@@ -4,7 +4,7 @@
             "outputFile": "ru.myitschool.rogal.android-mergeDebugResources-5:/values-ro/values-ro.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Student\\.gradle\\caches\\8.11.1\\transforms\\d5a1ad1ef2e09649f3767052ca616ae9\\transformed\\core-1.7.0\\res\\values-ro\\values-ro.xml",
+                    "source": "C:\\Users\\Дима\\.gradle\\caches\\8.11.1\\transforms\\d5a1ad1ef2e09649f3767052ca616ae9\\transformed\\core-1.7.0\\res\\values-ro\\values-ro.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

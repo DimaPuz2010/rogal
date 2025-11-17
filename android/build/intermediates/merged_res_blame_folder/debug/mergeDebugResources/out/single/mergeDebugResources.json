@@ -12,6 +12,10 @@
         "source": "ru.myitschool.rogal.android-android-8:/drawable-xxhdpi/ic_launcher.png"
     },
     {
+        "merged": "ru.myitschool.rogal.android-debug-7:/xml_file_paths.xml.flat",
+        "source": "ru.myitschool.rogal.android-android-8:/xml/file_paths.xml"
+    },
+    {
         "merged": "ru.myitschool.rogal.android-debug-7:/drawable-xhdpi_ic_launcher.png.flat",
         "source": "ru.myitschool.rogal.android-android-8:/drawable-xhdpi/ic_launcher.png"
     },

@@ -13,7 +13,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -26,8 +25,8 @@ import ru.myitschool.rogal.CustomHelpers.utils.ButtonCreator;
 import ru.myitschool.rogal.CustomHelpers.utils.FontManager;
 import ru.myitschool.rogal.CustomHelpers.utils.LogHelper;
 import ru.myitschool.rogal.Main;
-import ru.myitschool.rogal.networking.LeaderboardAPI;
 import ru.myitschool.rogal.networking.LeaderboardEntry;
+import ru.myitschool.rogal.networking.SupabaseAPI;
 
 /**
  * Экран для отображения таблицы лидеров
@@ -82,10 +81,7 @@ public class LeaderboardScreen implements Screen {
 
         // Создаем информацию о текущем сервере
         Label.LabelStyle serverInfoStyle = new Label.LabelStyle(FontManager.getSmallFont(), Color.LIGHT_GRAY);
-        String serverInfo = LeaderboardAPI.getServerProtocol() + "://" +
-            LeaderboardAPI.getServerHost() + ":" +
-            LeaderboardAPI.getServerPort() +
-            LeaderboardAPI.getServerPath();
+        String serverInfo = "Supabase Database";
         serverInfoLabel = new Label("Сервер: " + serverInfo, serverInfoStyle);
         serverInfoLabel.setAlignment(Align.center);
 
@@ -151,15 +147,6 @@ public class LeaderboardScreen implements Screen {
             }
         });
 
-        // Кнопка настройки сервера
-        TextButton serverSettingsButton = ButtonCreator.createButton("НАСТРОЙКИ СЕРВЕРА", FontManager.getRegularFont());
-        serverSettingsButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                showServerSettingsDialog();
-            }
-        });
-
         // Кнопка возврата в главное меню
         TextButton backButton = ButtonCreator.createButton("НАЗАД В МЕНЮ", FontManager.getRegularFont());
         backButton.addListener(new ChangeListener() {
@@ -173,7 +160,6 @@ public class LeaderboardScreen implements Screen {
         // Создаем нижнюю панель с кнопками
         Table bottomPanel = new Table();
         bottomPanel.add(toggleViewButton).width(300).height(50).padRight(10);
-        bottomPanel.add(serverSettingsButton).width(300).height(50).padRight(10);
         bottomPanel.add(backButton).width(300).height(50);
 
         mainTable.add(bottomPanel).padBottom(20).row();
@@ -189,16 +175,11 @@ public class LeaderboardScreen implements Screen {
     private void checkServerStatus() {
         statusLabel.setText("Проверка сервера...");
 
-        LeaderboardAPI.checkServerStatus(new LeaderboardAPI.ServerStatusListener() {
+        SupabaseAPI.checkServerStatus(new SupabaseAPI.ServerStatusListener() {
             @Override
             public void onSuccess(boolean isAvailable) {
                 isServerAvailable = true;
-                String serverInfo = LeaderboardAPI.getServerProtocol() + "://" +
-                    LeaderboardAPI.getServerHost() + ":" +
-                    LeaderboardAPI.getServerPort() +
-                    LeaderboardAPI.getServerPath();
-
-                serverInfoLabel.setText("Сервер: " + serverInfo + " (доступен)");
+                serverInfoLabel.setText("Сервер: Supabase Database (доступен)");
                 serverInfoLabel.setColor(new Color(0.5f, 1f, 0.5f, 1f));
 
                 // Сервер доступен, загружаем данные
@@ -208,12 +189,7 @@ public class LeaderboardScreen implements Screen {
             @Override
             public void onError(String error) {
                 isServerAvailable = false;
-                String serverInfo = LeaderboardAPI.getServerProtocol() + "://" +
-                    LeaderboardAPI.getServerHost() + ":" +
-                    LeaderboardAPI.getServerPort() +
-                    LeaderboardAPI.getServerPath();
-
-                serverInfoLabel.setText("Сервер: " + serverInfo + " (недоступен)");
+                serverInfoLabel.setText("Сервер: Supabase Database (недоступен)");
                 serverInfoLabel.setColor(new Color(1f, 0.5f, 0.5f, 1f));
 
                 statusLabel.setText("Ошибка: сервер недоступен");
@@ -242,7 +218,7 @@ public class LeaderboardScreen implements Screen {
 
         if (showOnlyBestScores) {
             // Загружаем только лучшие результаты
-            LeaderboardAPI.getBestScores(page, size, new LeaderboardAPI.LeaderboardResponseListener() {
+            SupabaseAPI.getLeaderboard(page, size, new SupabaseAPI.LeaderboardResponseListener() {
                 @Override
                 public void onSuccess(List<LeaderboardEntry> entries, int totalEntries, int currentPageResponse, int totalPagesResponse) {
                     handleLeaderboardResponse(entries, totalEntries, currentPageResponse);
@@ -255,7 +231,7 @@ public class LeaderboardScreen implements Screen {
             });
         } else {
             // Загружаем обычную таблицу лидеров
-            LeaderboardAPI.getLeaderboard(page, size, new LeaderboardAPI.LeaderboardResponseListener() {
+            SupabaseAPI.getLeaderboard(page, size, new SupabaseAPI.LeaderboardResponseListener() {
                 @Override
                 public void onSuccess(List<LeaderboardEntry> entries, int totalEntries, int currentPageResponse, int totalPagesResponse) {
                     handleLeaderboardResponse(entries, totalEntries, currentPageResponse);
@@ -403,144 +379,5 @@ public class LeaderboardScreen implements Screen {
     public void dispose() {
         stage.dispose();
         backgroundTexture.dispose();
-    }
-
-    /**
-     * Показывает диалог настройки сервера
-     */
-    private void showServerSettingsDialog() {
-        // Создаем затемненный фон
-        final Table darkBackground = new Table();
-        darkBackground.setFillParent(true);
-        darkBackground.setBackground(ButtonCreator.createBackground(new Color(0, 0, 0, 0.7f)));
-
-        // Создаем диалоговое окно
-        Table dialog = new Table();
-        dialog.setBackground(ButtonCreator.createBackground(new Color(0.2f, 0.2f, 0.3f, 0.9f)));
-        dialog.pad(20);
-
-        // Создаем заголовок
-        Label.LabelStyle titleStyle = new Label.LabelStyle(FontManager.getRegularFont(), Color.WHITE);
-        Label titleLabel = new Label("НАСТРОЙКИ СЕРВЕРА", titleStyle);
-        titleLabel.setAlignment(Align.center);
-
-        // Создаем стиль для текстовых полей
-        TextField.TextFieldStyle textFieldStyle = new TextField.TextFieldStyle();
-        textFieldStyle.font = FontManager.getRegularFont();
-        textFieldStyle.fontColor = Color.WHITE;
-        textFieldStyle.background = ButtonCreator.createBackground(new Color(0.1f, 0.1f, 0.2f, 1f));
-        textFieldStyle.cursor = ButtonCreator.createBackground(Color.WHITE);
-        textFieldStyle.selection = ButtonCreator.createBackground(new Color(0.3f, 0.3f, 0.7f, 1f));
-
-        // Поле ввода протокола
-        Label protocolLabel = new Label("Протокол:", titleStyle);
-        final TextField protocolField = new TextField(LeaderboardAPI.getServerProtocol(), textFieldStyle);
-        protocolField.setTextFieldFilter(new TextField.TextFieldFilter() {
-            @Override
-            public boolean acceptChar(TextField textField, char c) {
-                return Character.isLetterOrDigit(c);
-            }
-        });
-
-        // Поле ввода хоста
-        Label hostLabel = new Label("Хост:", titleStyle);
-        final TextField hostField = new TextField(LeaderboardAPI.getServerHost(), textFieldStyle);
-
-        // Поле ввода порта
-        Label portLabel = new Label("Порт:", titleStyle);
-        final TextField portField = new TextField(String.valueOf(LeaderboardAPI.getServerPort()), textFieldStyle);
-        portField.setTextFieldFilter(new TextField.TextFieldFilter.DigitsOnlyFilter());
-
-        // Поле ввода пути API
-        Label pathLabel = new Label("Путь API:", titleStyle);
-        final TextField pathField = new TextField(LeaderboardAPI.getServerPath(), textFieldStyle);
-
-        // Кнопки
-        TextButton saveButton = ButtonCreator.createButton("СОХРАНИТЬ", FontManager.getRegularFont());
-        saveButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                try {
-                    String protocol = protocolField.getText().trim();
-                    String host = hostField.getText().trim();
-                    String port = portField.getText().trim();
-                    String path = pathField.getText().trim();
-
-                    // Проверка и установка значений по умолчанию
-                    if (protocol.isEmpty()) {
-                        protocol = "http";
-                    }
-
-                    if (host.isEmpty()) {
-                        host = "localhost";
-                    }
-
-                    if (Integer.parseInt(port) <= 0) {
-                        port = "8080";
-                    }
-
-                    if (!path.startsWith("/")) {
-                        path = "/" + path;
-                    }
-
-                    // Сохраняем все настройки
-                    LeaderboardAPI.setServerProtocol(protocol);
-                    LeaderboardAPI.setServerHost(host);
-                    LeaderboardAPI.setServerPort(Integer.parseInt(port));
-                    LeaderboardAPI.setServerPath(path);
-
-                    darkBackground.remove();
-
-                    // Обновляем интерфейс
-                    serverInfoLabel.setText("Сервер: " + protocol + "://" + host + ":" + port + path);
-                    serverInfoLabel.setColor(Color.LIGHT_GRAY);
-
-                    // Проверяем доступность сервера
-                    checkServerStatus();
-
-                    LogHelper.log("LeaderboardScreen", "Настройки сервера сохранены: " + protocol + "://" + host + ":" + port + path);
-                } catch (Exception e) {
-                    LogHelper.error("LeaderboardScreen", "Ошибка при сохранении настроек сервера: " + e.getMessage());
-                }
-            }
-        });
-
-        TextButton cancelButton = ButtonCreator.createButton("ОТМЕНА", FontManager.getRegularFont());
-        cancelButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                darkBackground.remove();
-            }
-        });
-
-        // Добавляем элементы в диалог
-        dialog.add(titleLabel).colspan(2).pad(10).row();
-
-        dialog.add(protocolLabel).padRight(10).align(Align.right);
-        dialog.add(protocolField).width(200).padBottom(10).row();
-
-        dialog.add(hostLabel).padRight(10).align(Align.right);
-        dialog.add(hostField).width(200).padBottom(10).row();
-
-        dialog.add(portLabel).padRight(10).align(Align.right);
-        dialog.add(portField).width(200).padBottom(10).row();
-
-        dialog.add(pathLabel).padRight(10).align(Align.right);
-        dialog.add(pathField).width(200).padBottom(20).row();
-
-        Table buttonTable = new Table();
-        buttonTable.add(saveButton).width(140).height(50).padRight(20);
-        buttonTable.add(cancelButton).width(140).height(50);
-
-        dialog.add(buttonTable).colspan(2).padTop(10);
-
-        // Центрируем диалог
-        darkBackground.add(dialog);
-
-        // Добавляем диалог на сцену
-        stage.addActor(darkBackground);
-
-        // Устанавливаем фокус на поле хоста
-        stage.setKeyboardFocus(hostField);
     }
 }

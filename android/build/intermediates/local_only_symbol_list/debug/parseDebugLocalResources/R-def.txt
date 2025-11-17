@@ -4,3 +4,4 @@ color ic_background_color
 drawable ic_launcher
 string app_name
 style GdxTheme
+xml file_paths

@@ -7,24 +7,28 @@ import com.badlogic.gdx.utils.JsonValue;
  * Класс, представляющий запись в таблице лидеров
  */
 public class LeaderboardEntry implements Json.Serializable {
-    private String id;
+    private long id;
     private String playerName;
     private int score;
     private int wave;
     private int kills;
     private String timestamp;
+    private String submittedAt;
     private boolean isBestScore;
-    private int totalKills;
-    private int gamesPlayed;
-    private int bestWave;
+    private String totalKills;
+    private String gamesPlayed;
+    private String bestWave;
 
-    public LeaderboardEntry() {}
+    public LeaderboardEntry() {
+        // Конструктор по умолчанию для десериализации
+    }
 
-    public String getId() {
+    // Геттеры и сеттеры
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -68,6 +72,14 @@ public class LeaderboardEntry implements Json.Serializable {
         this.timestamp = timestamp;
     }
 
+    public String getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setSubmittedAt(String submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
     public boolean isBestScore() {
         return isBestScore;
     }
@@ -76,27 +88,27 @@ public class LeaderboardEntry implements Json.Serializable {
         isBestScore = bestScore;
     }
 
-    public int getTotalKills() {
+    public String getTotalKills() {
         return totalKills;
     }
 
-    public void setTotalKills(int totalKills) {
+    public void setTotalKills(String totalKills) {
         this.totalKills = totalKills;
     }
 
-    public int getGamesPlayed() {
+    public String getGamesPlayed() {
         return gamesPlayed;
     }
 
-    public void setGamesPlayed(int gamesPlayed) {
+    public void setGamesPlayed(String gamesPlayed) {
         this.gamesPlayed = gamesPlayed;
     }
 
-    public int getBestWave() {
+    public String getBestWave() {
         return bestWave;
     }
 
-    public void setBestWave(int bestWave) {
+    public void setBestWave(String bestWave) {
         this.bestWave = bestWave;
     }
 
@@ -108,10 +120,8 @@ public class LeaderboardEntry implements Json.Serializable {
         // Проверка на вложенные объекты (например, "score": {...})
         JsonValue idValue = jsonData.get("id");
         if (idValue != null) {
-            if (idValue.isString()) {
-                id = idValue.asString();
-            } else if (idValue.isNumber()) {
-                id = String.valueOf(idValue.asInt());
+            if (idValue.isNumber()) {
+                id = idValue.asLong();
             }
         }
 
@@ -164,20 +174,20 @@ public class LeaderboardEntry implements Json.Serializable {
 
         // Чтение общего количества убийств
         JsonValue totalKillsValue = jsonData.get("totalKills");
-        if (totalKillsValue != null && totalKillsValue.isNumber()) {
-            totalKills = totalKillsValue.asInt();
+        if (totalKillsValue != null) {
+            totalKills = totalKillsValue.asString();
         }
 
         // Чтение количества сыгранных игр
         JsonValue gamesPlayedValue = jsonData.get("gamesPlayed");
-        if (gamesPlayedValue != null && gamesPlayedValue.isNumber()) {
-            gamesPlayed = gamesPlayedValue.asInt();
+        if (gamesPlayedValue != null) {
+            gamesPlayed = gamesPlayedValue.asString();
         }
 
         // Чтение лучшей волны
         JsonValue bestWaveValue = jsonData.get("bestWave");
-        if (bestWaveValue != null && bestWaveValue.isNumber()) {
-            bestWave = bestWaveValue.asInt();
+        if (bestWaveValue != null) {
+            bestWave = bestWaveValue.asString();
         }
     }
 
@@ -187,12 +197,8 @@ public class LeaderboardEntry implements Json.Serializable {
     private void extractScoreObjectData(JsonValue scoreObj) {
         // ID
         JsonValue nestedId = scoreObj.get("id");
-        if (nestedId != null) {
-            if (nestedId.isString()) {
-                id = nestedId.asString();
-            } else if (nestedId.isNumber()) {
-                id = String.valueOf(nestedId.asInt());
-            }
+        if (nestedId != null && nestedId.isNumber()) {
+            id = nestedId.asLong();
         }
 
         // Score
@@ -233,20 +239,20 @@ public class LeaderboardEntry implements Json.Serializable {
 
         // TotalKills
         JsonValue totalKillsValue = scoreObj.get("totalKills");
-        if (totalKillsValue != null && totalKillsValue.isNumber()) {
-            totalKills = totalKillsValue.asInt();
+        if (totalKillsValue != null) {
+            totalKills = totalKillsValue.asString();
         }
 
         // GamesPlayed
         JsonValue gamesPlayedValue = scoreObj.get("gamesPlayed");
-        if (gamesPlayedValue != null && gamesPlayedValue.isNumber()) {
-            gamesPlayed = gamesPlayedValue.asInt();
+        if (gamesPlayedValue != null) {
+            gamesPlayed = gamesPlayedValue.asString();
         }
 
         // BestWave
         JsonValue bestWaveValue = scoreObj.get("bestWave");
-        if (bestWaveValue != null && bestWaveValue.isNumber()) {
-            bestWave = bestWaveValue.asInt();
+        if (bestWaveValue != null) {
+            bestWave = bestWaveValue.asString();
         }
     }
 
