@@ -15,6 +15,7 @@ ADDED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml:2:1-46:12
 INJECTED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml:2:1-46:12
 INJECTED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml:2:1-46:12
 INJECTED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml:2:1-46:12
+MERGED from [androidx.multidex:multidex:2.0.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\bef8206c27eaa7358c518ac753851e16\transformed\multidex-2.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Dima\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:2:1-13:12
 MERGED from [androidx.core:core:1.7.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:17:1-26:12
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.3.1] C:\Users\Dima\.gradle\caches\8.11.1\transforms\82f33f404611ecdb33566ce3c005b9ea\transformed\lifecycle-runtime-2.3.1\AndroidManifest.xml:17:1-24:12
@@ -115,6 +116,8 @@ uses-sdk
 INJECTED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml
 INJECTED from E:\AndroidProject\1\rogal\android\AndroidManifest.xml
+MERGED from [androidx.multidex:multidex:2.0.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\bef8206c27eaa7358c518ac753851e16\transformed\multidex-2.0.0\AndroidManifest.xml:20:5-43
+MERGED from [androidx.multidex:multidex:2.0.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\bef8206c27eaa7358c518ac753851e16\transformed\multidex-2.0.0\AndroidManifest.xml:20:5-43
 MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Dima\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:5:5-7:41
 MERGED from [com.badlogicgames.gdx:gdx-backend-android:1.12.1] C:\Users\Dima\.gradle\caches\8.11.1\transforms\62fef5501a1beddcfb46b1e8e9890734\transformed\gdx-backend-android-1.12.1\AndroidManifest.xml:5:5-7:41
 MERGED from [androidx.core:core:1.7.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:20:5-22:41

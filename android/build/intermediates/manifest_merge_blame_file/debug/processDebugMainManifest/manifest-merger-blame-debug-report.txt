@@ -30,23 +30,23 @@
 20
 21    <application
 21-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:11:3-44:17
-22        android:allowBackup="true"
-22-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:12:7-33
-23        android:appCategory="game"
-23-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:16:7-33
-24        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-24-->[androidx.core:core:1.7.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:24:18-86
-25        android:debuggable="true"
-26        android:extractNativeLibs="true"
-27        android:fullBackupContent="true"
-27-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:13:7-39
-28        android:icon="@drawable/ic_launcher"
-28-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:14:7-43
-29        android:isGame="true"
-29-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:15:7-28
-30        android:label="@string/app_name"
-30-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:17:7-39
-31        android:testOnly="true"
+22        android:name="androidx.multidex.MultiDexApplication"
+23        android:allowBackup="true"
+23-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:12:7-33
+24        android:appCategory="game"
+24-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:16:7-33
+25        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+25-->[androidx.core:core:1.7.0] C:\Users\Dima\.gradle\caches\8.11.1\transforms\d5a1ad1ef2e09649f3767052ca616ae9\transformed\core-1.7.0\AndroidManifest.xml:24:18-86
+26        android:debuggable="true"
+27        android:extractNativeLibs="true"
+28        android:fullBackupContent="true"
+28-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:13:7-39
+29        android:icon="@drawable/ic_launcher"
+29-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:14:7-43
+30        android:isGame="true"
+30-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:15:7-28
+31        android:label="@string/app_name"
+31-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:17:7-39
 32        android:theme="@style/GdxTheme" >
 32-->E:\AndroidProject\1\rogal\android\AndroidManifest.xml:19:7-38
 33        <activity
